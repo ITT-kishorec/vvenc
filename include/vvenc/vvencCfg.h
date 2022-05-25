@@ -895,6 +895,7 @@ VVENC_DECL int vvenc_set_param_list(vvenc_config *c, int argc, char* argv[] );
   \pre        vvenc_config_default() or vvenc_init_default() must be called first 
 */
 VVENC_DECL const char* vvenc_get_config_as_string( vvenc_config *cfg, vvencMsgLevel eMsgLevel );
+#define LMCS_CONFIG_PARAM_IN_EASYMODE_AND_LMCS3_EXT 1
 
 #ifdef __cplusplus
 }

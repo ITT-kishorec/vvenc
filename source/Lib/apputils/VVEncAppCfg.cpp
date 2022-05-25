@@ -542,6 +542,9 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
     ("refreshsec,-rs",                                  c->m_IntraPeriodSec,                                 "Intra period/refresh in seconds")
     ("intraperiod,-ip",                                 c->m_IntraPeriod,                                    "Intra period in frames (0: use intra period in seconds (refreshsec), else: n*gopsize)")
     ("tiles",                                           toNumTiles,                                          "Set number of tile columns and rows")
+#if LMCS_CONFIG_PARAM_IN_EASYMODE_AND_LMCS3_EXT
+    ("LMCSEnable",                                      c->m_lumaReshapeEnable,                              "Enable LMCS luma mapping with chroma scaling (0:off 1:on 2:use SCC detection to disable for screen coded content 3:disable based on metrics)")
+#endif
     ;
   }
   else

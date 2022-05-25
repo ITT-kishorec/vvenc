@@ -384,7 +384,7 @@ VVENC_DECL void vvenc_config_default(vvenc_config *c )
   c->m_enablePictureHeaderInSliceHeader        = true;
   c->m_AccessUnitDelimiter                     = -1;                                    ///< add Access Unit Delimiter NAL units, default: auto (only enable if needed by dependent options)
 
-  c->m_printMSEBasedSequencePSNR               = false;
+  c->m_printMSEBasedSequencePSNR               = true;
   c->m_printHexPsnr                            = false;
   c->m_printFrameMSE                           = false;
   c->m_printSequenceMSE                        = false;
