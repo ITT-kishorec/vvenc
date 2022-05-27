@@ -1668,9 +1668,6 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
     Picture* Ipic;
     for (auto it = m_gopTemporalActivity.begin(); it != m_gopTemporalActivity.end(); it++)
     {
-#if LMCS3_ENABLE_DEBUG_PRINTS
-      printf("poc = %d, tid = %d, sliceType = %d, act = %lf\n", it->pocId, it->tId, it->sliceType, it->picTemporalAct);
-#endif
       if (it->pocId - (m_pcEncCfg->m_GOPSize * m_numGOPStatsProcessed) == 0)
       {
         Ipic = it->pic;
@@ -1704,9 +1701,6 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
           {
             gopSceneCuts += isNewScene;
           }
-#if LMCS3_ENABLE_DEBUG_PRINTS
-          printf("picid with scene cut = %d ,curPic->picVisActY = %lf, prevPic->picVisActY = %lf, cond1 = %d, cond2 = %d ,  prevPoc = %d\n", it->pocId, curPic->picVisActY, prevPicStats->picVisAct, (curPic->picVisActY * 64 > prevPicStats->picVisAct * 181), curPic->TLayer <= 1 && curPic->picVisActY <= (1u << (m_pcEncCfg->m_internalBitDepth[CH_L] - 6)), prevPicStats->pocId);
-#endif
         }
 #endif
         gopTemporalActivityAvg += it->picTemporalAct;

@@ -70,9 +70,7 @@ public:
   , m_ratioPicsWithTempAct2 ( 0.0 )
 #endif
 #endif
-#if PUBLISH_MCTF_INFO
-  , m_mctfTotalError    ( 0.0 )
-#endif
+
   , m_cts        ( 0 )
   , m_maxFrames  ( -1 )
   , m_poc        ( -1 )
@@ -129,9 +127,7 @@ public:
     m_ratioPicsWithTempAct2 = 0;
 #endif
 #endif
-#if PUBLISH_MCTF_INFO
-    m_mctfTotalError = 0;
-#endif
+
     std::fill_n( m_prevShared, NUM_PREV_FRAMES, nullptr );
   }
 
@@ -157,9 +153,7 @@ public:
     pic->ratioPicsWithTempAct2 = m_ratioPicsWithTempAct2;
 #endif
 #endif
-#if PUBLISH_MCTF_INFO
-    pic->mctfTotalError = m_mctfTotalError;
-#endif
+
     m_refCount      += 1;
   }
 
@@ -208,9 +202,6 @@ public:
   double     m_ratioPicsWithTempAct1;
   double     m_ratioPicsWithTempAct2;
 #endif
-#endif
-#if PUBLISH_MCTF_INFO
-  double     m_mctfTotalError;
 #endif
 
 private:

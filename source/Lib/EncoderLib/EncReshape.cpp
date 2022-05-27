@@ -469,16 +469,9 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   (void)picSpatialActGopAvg;
   (void)gopAvgTemporalToAvgSpatialRatio;
 #endif
-#if PUBLISH_MCTF_INFO
-  printf("####LMCS : POC = %d, TID = %d, MCTFerror = %lf\n", pic.poc, pic.TLayer, pic.mctfTotalError);
-#endif
 
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
-#if LMCS3_ENABLE_DEBUG_PRINTS
-    printf("LMCS : POC = %d, picTemporalActGopAvg = %lf, picSpatialActGopAvg = %lf\n",pic.poc, picTemporalActGopAvg, picSpatialActGopAvg);
-    printf("LMCS : POC = %d, sceneCuts = %d\n", pic.poc, pic.numGOPSceneCuts);
-#endif
 #if LMCS3_METRIC_ANALYZER
 #if LMCS3_C_SCC_LOWTEMPORAL_METRIC
     m_isSccLowTemporalCase = false;
@@ -656,12 +649,6 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   }
   else // Inter slices
   {
-#if LMCS3_ENABLE_DEBUG_PRINTS
-    if (pic.TLayer == 0)
-    {
-      printf("LMCS, tid0 bpic : pic->m_picShared->m_temporalActGopAvg = %lf\n", picTemporalActGopAvg);
-    }
-#endif
     m_sliceReshapeInfo.sliceReshaperModelPresent = false;
     m_sliceReshapeInfo.enableChromaAdj = m_chromaAdj;
     if (!m_reshape) { m_sliceReshapeInfo.sliceReshaperEnabled = false; }

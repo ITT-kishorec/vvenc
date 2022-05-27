@@ -3474,9 +3474,7 @@ VVENC_DECL int vvenc_init_preset( vvenc_config *c, vvencPresetMode preset )
     default:
       return -1;
   }
-#if PUBLISH_MCTF_INFO
-  c->m_vvencMCTF.MCTF = 1;
-#endif
+
   return 0;
 }
 

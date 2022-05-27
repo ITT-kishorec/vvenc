@@ -257,9 +257,6 @@ public:
   double                        ratioPicsWithTempAct2;
 #endif
 #endif
-#if PUBLISH_MCTF_INFO
-  double                        mctfTotalError;
-#endif
   StopClock                     encTime;
   bool                          isSccWeak;
   bool                          isSccStrong;

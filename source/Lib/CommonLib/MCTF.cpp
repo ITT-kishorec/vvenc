@@ -321,9 +321,7 @@ void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
   {
     const PelStorage& origBuf = pic->getOrigBuffer();
           PelStorage& fltrBuf = pic->getFilteredOrigBuffer();
-#if PUBLISH_MCTF_INFO
-	uint32_t totalError = 0;
-#endif
+
     // subsample original picture so it only needs to be done once
     PelStorage origSubsampled2;
     PelStorage origSubsampled4;
@@ -335,9 +333,7 @@ void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
     for ( int i = dropFramesFront; i < picFifo.size() - dropFramesBack; i++ )
     {
       Picture* curPic = picFifo[ i ];
-#if PUBLISH_MCTF_INFO
-	  totalError = 0;
-#endif
+
       if ( curPic->poc == m_filterPoc )
       {
         continue;
@@ -367,34 +363,6 @@ void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
 
         motionEstimationLuma(srcPic.mvs, origBuf, srcPic.picBuffer, 8, &mv_2, 1, true);
 
-#if PUBLISH_MCTF_INFO
-		int blockSize = 8;
-		int stepSize = blockSize;
-		int totalBlocks = 0;
-		for (int blockY = 0; blockY + blockSize <= height; blockY += stepSize)
-		{
-			for (int blockX = 0; blockX + blockSize <= width; blockX += stepSize)
-			{
-				MotionVector mv = srcPic.mvs.get(blockX / stepSize, blockY / stepSize);
-				totalError += mv.errorME;
-				totalBlocks++;
-			}
-		}
-
-		//older method
-
-		//int totalBlocks = srcPic.mvs.w() * srcPic.mvs.h();
-		/*for (int i = 0; i < srcPic.mvs.w(); i++)
-		{
-			for (int j = 0; j < srcPic.mvs.h(); j++)
-			{
-				MotionVector mv = srcPic.mvs.get(i, j);
-				totalError += mv.errorPreProcessed;
-			}
-		}*/
-
-		curPic->m_picShared->m_mctfTotalError = totalError / totalBlocks;
-#endif
       }
 
       srcPic.index = std::min(3, std::abs(curPic->poc - m_filterPoc) - 1);
@@ -613,9 +581,7 @@ bool MCTF::estimateLumaLn( std::atomic_int& blockX_, std::atomic_int* prevLineX,
         variance = variance + ( pix - avg ) * ( pix - avg );
       }
     }
-#if PUBLISH_MCTF_INFO
-	best.errorME = best.error;
-#endif
+
     best.error = ( int ) ( 20 * ( ( best.error + 5.0 ) / ( variance + 5.0 ) ) + ( best.error / ( blockSize * blockSize ) ) / 50 );
 
     mvs.get(blockX / stepSize, blockY / stepSize) = best;
