@@ -2057,12 +2057,12 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   pic.isReferenced = true;
 
 #if RCLOOKAHEAD_RELATED_CHANGES
-  if (m_pcEncCfg->m_RCLookAhead)
+  if (m_pcEncCfg->m_LookAhead)
   {
 	  const Slice* sliceForAct = pic.slices[0];
 	  pic.picVisActY = BitAllocation::getPicVisualActivity(sliceForAct, m_pcEncCfg);
-	  pic.picTemporalActY = BitAllocation::getPicTemporalActivity(sliceForAct, m_pcEncCfg);
-	  pic.picSpatialActY = BitAllocation::getPicSpatialActivity(sliceForAct, m_pcEncCfg);
+	 // pic.picTemporalActY = BitAllocation::getPicTemporalActivity(sliceForAct, m_pcEncCfg);
+	 // pic.picSpatialActY = BitAllocation::getPicSpatialActivity(sliceForAct, m_pcEncCfg);
   }
 #endif
 

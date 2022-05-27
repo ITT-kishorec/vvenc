@@ -1171,7 +1171,7 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
 #if RCLOOKAHEAD_RELATED_CHANGES
   if (c->m_lumaReshapeEnable == 3)
   {
-    c->m_RCLookAhead = true;
+    c->m_LookAhead = true;
   }
 #endif
   return ret;

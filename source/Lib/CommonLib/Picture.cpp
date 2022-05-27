@@ -178,8 +178,8 @@ Picture::Picture()
     , picVisActTL0      ( 0 )
     , picVisActY        ( 0 )
 #if RCLOOKAHEAD_RELATED_CHANGES
-    , picTemporalActY(0.0)
-    , picSpatialActY(0.0)
+    , picTemporalActY(0)
+    , picSpatialActY(0)
 #endif
 #if LMCS3_METRIC_PREANALYSIS
     , picTemporalActYGopAvg(0.0)

@@ -89,9 +89,9 @@ struct picStat {
   int     pocId;
   int     tId;
   int     sliceType;
-  double	picTemporalAct;
-  double	picSpatialAct;
-  double	picVisAct;
+  uint16_t	picTemporalAct;
+  uint16_t	picSpatialAct;
+  uint16_t	picVisAct;
   Picture* pic;
 };
 #endif
@@ -244,8 +244,8 @@ public:
   uint16_t                      picVisActTL0;
   uint16_t                      picVisActY;
 #if RCLOOKAHEAD_RELATED_CHANGES
-  double                        picTemporalActY;
-  double                        picSpatialActY;
+  uint16_t                        picTemporalActY;
+  uint16_t                        picSpatialActY;
 #endif
 #if LMCS3_METRIC_PREANALYSIS
   double                        picTemporalActYGopAvg;
