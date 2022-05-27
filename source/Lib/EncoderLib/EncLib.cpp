@@ -191,6 +191,27 @@ void EncLib::initPass( int pass, const char* statsFName )
   // reset
   xUninitLib();
 
+#if RCLOOKAHEAD_RELATED_CHANGES
+  if (m_encCfg.m_lumaReshapeEnable == 3)
+  {
+    if (m_encCfg.m_RCNumPasses > 1)
+    {
+      if (!m_rateCtrl->rcIsFinalPass)
+      {
+        // set encoder config for 1st rate control pass
+        const_cast<VVEncCfg&>(m_encCfg) = m_firstPassCfg;
+      }
+      else
+      {
+        // restore encoder config for final 2nd RC pass
+        const_cast<VVEncCfg&>(m_encCfg) = m_orgCfg;
+        const_cast<VVEncCfg&>(m_encCfg).m_QP = m_rateCtrl->getBaseQP();
+      }
+    }
+  }
+  else
+#endif
+  {
   // enable encoder config based on rate control pass
   if( m_encCfg.m_RCNumPasses > 1 || (m_encCfg.m_LookAhead && m_orgCfg.m_RCTargetBitrate) )
   {
@@ -205,6 +226,7 @@ void EncLib::initPass( int pass, const char* statsFName )
       const_cast<VVEncCfg&>(m_encCfg) = m_orgCfg;
       const_cast<VVEncCfg&>(m_encCfg).m_QP = m_rateCtrl->getBaseQP();
     }
+  }
   }
 
   // thread pool

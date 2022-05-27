@@ -46,6 +46,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include "vvenc/vvencCfg.h"
+#include "CommonLib/Picture.h"
 #include "CommonLib/Reshape.h"
 
 //! \ingroup EncoderLib
@@ -62,6 +63,9 @@ struct SeqInfo
   : binVar { 0.0 }
   , binHist { 0.0 }
   , normVar { 0.0 }
+#if LMCS3_METRIC_ANALYZER
+  , quantVar { 0 }
+#endif
   , nonZeroCnt(0)
   , weightVar ( 0.0 )
   , weightNorm ( 0.0 )
@@ -75,6 +79,9 @@ struct SeqInfo
   double binVar[PIC_ANALYZE_CW_BINS];
   double binHist[PIC_ANALYZE_CW_BINS];
   double normVar[PIC_ANALYZE_CW_BINS];
+#if LMCS3_B_GATE_M1_M2_M3
+  uint32_t quantVar[PIC_CODE_CW_BINS][60];
+#endif
   int    nonZeroCnt;
   double weightVar;
   double weightNorm;
@@ -99,6 +106,15 @@ private:
   double                  m_chromaWeight;
   int                     m_chromaAdj;
   int                     m_binNum;
+#if LMCS3_METRIC_ANALYZER
+  bool                    m_metricChecker;
+#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+  bool                    m_isSccLowTemporalCase;
+#endif
+#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+  bool                    m_isMetricE2Case;
+#endif
+#endif
   SeqInfo                 m_srcSeqStats;
   SeqInfo                 m_rspSeqStats;
 public:
@@ -116,6 +132,9 @@ public:
   void cwPerturbation   ( int startBinIdx, int endBinIdx, uint16_t maxCW);
   void cwReduction      ( int startBinIdx, int endBinIdx);
   void deriveReshapeParametersSDR ( bool *intraAdp, bool *interAdp);
+#if LMCS3_METRIC_ANALYZER
+  void parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod);
+#endif
   void deriveReshapeParameters    ( double *array, int start, int end, vvencReshapeCW respCW, double &alpha, double &beta);
   void initLUTfromdQPModel  ();
   void constructReshaperLMCS();

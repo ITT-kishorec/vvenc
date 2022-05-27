@@ -70,6 +70,15 @@ EncReshape::EncReshape()
   , m_chromaWeight  (1.0)
   , m_chromaAdj     (0)
   , m_binNum        (0)
+#if LMCS3_METRIC_ANALYZER
+  , m_metricChecker         (false)
+#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+  , m_isSccLowTemporalCase  (false)
+#endif
+#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+  , m_isMetricE2Case        (false)
+#endif
+#endif
   , m_srcSeqStats   ()
   , m_rspSeqStats   ()
 {
@@ -134,6 +143,9 @@ void  EncReshape::init( const VVEncCfg& encCfg )
     m_signalType = encCfg.m_reshapeSignalType;
     m_chromaWeight = 1.0;
 
+#if LMCS3_METRIC_ANALYZER
+    m_metricChecker = (encCfg.m_lumaReshapeEnable == 3);
+#endif
     initLumaLevelToWeightTableReshape();
   }
   else if (encCfg.m_lumaLevelToDeltaQPEnabled )
@@ -350,6 +362,10 @@ void EncReshape::calcSeqStats(Picture& pic, SeqInfo &stats)
       double varLog10 = log10(variance + 1.0);
       stats.binVar[binIdx] += varLog10;
       binCnt[binIdx]++;
+#if LMCS3_B_GATE_M1_M2_M3
+      int quantVarIdx = std::min((int)floor(varLog10 * 10), 59);
+      stats.quantVar[binIdx][quantVarIdx] ++;
+#endif
     }
     picY.buf += stride;
   }
@@ -441,8 +457,36 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   m_sliceReshapeInfo.sliceReshaperModelPresent = true;
   m_sliceReshapeInfo.sliceReshaperEnabled = true;
   int modIP = pic.getPOC() - pic.getPOC() / reshapeCW.rspFpsToIp * reshapeCW.rspFpsToIp;
+#if RCLOOKAHEAD_RELATED_CHANGES
+  double picTemporalAct = pic.picTemporalActY;
+  (void)picTemporalAct;
+#endif
+#if LMCS3_METRIC_PREANALYSIS
+  double picTemporalActGopAvg = pic.picTemporalActYGopAvg;
+  double picSpatialActGopAvg = pic.picSpatialActYGopAvg;
+  double gopAvgTemporalToAvgSpatialRatio = picTemporalActGopAvg / picSpatialActGopAvg;
+  (void)picTemporalActGopAvg;
+  (void)picSpatialActGopAvg;
+  (void)gopAvgTemporalToAvgSpatialRatio;
+#endif
+#if PUBLISH_MCTF_INFO
+  printf("####LMCS : POC = %d, TID = %d, MCTFerror = %lf\n", pic.poc, pic.TLayer, pic.mctfTotalError);
+#endif
+
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
+#if LMCS3_ENABLE_DEBUG_PRINTS
+    printf("LMCS : POC = %d, picTemporalActGopAvg = %lf, picSpatialActGopAvg = %lf\n",pic.poc, picTemporalActGopAvg, picSpatialActGopAvg);
+    printf("LMCS : POC = %d, sceneCuts = %d\n", pic.poc, pic.numGOPSceneCuts);
+#endif
+#if LMCS3_METRIC_ANALYZER
+#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+    m_isSccLowTemporalCase = false;
+#endif
+#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+    m_isMetricE2Case = false;
+#endif
+#endif
     if (m_sliceReshapeInfo.sliceReshaperModelPresent == true)
     {
       m_reshapeCW = reshapeCW;
@@ -535,6 +579,14 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       {
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
         m_reshape = false;
+#if LMCS3_METRIC_ANALYZER
+#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+        m_isSccLowTemporalCase = false;
+#endif
+#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+        m_isMetricE2Case = false;
+#endif
+#endif
         return;
       }
 
@@ -570,9 +622,46 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       cwReduction(startBinIdx, endBinIdx);
     }
     m_chromaAdj = m_sliceReshapeInfo.enableChromaAdj;
+
+#if LMCS3_METRIC_ANALYZER
+    if (m_metricChecker)
+    {
+      parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
+
+#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+      if ((m_reshape == true) && pic.isSccStrong && (picTemporalActGopAvg < LMCS3_A_METRIC_THRESHOLD) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
+      {
+        m_isSccLowTemporalCase = true;
+        m_sliceReshapeInfo.sliceReshaperEnabled = true;
+      }
+      else
+      {
+        m_isSccLowTemporalCase = false;
+      }
+#endif
+
+#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+      if (gopAvgTemporalToAvgSpatialRatio < LMCS3_E2_METRIC_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
+      {
+        m_isMetricE2Case = true;
+        m_sliceReshapeInfo.sliceReshaperEnabled = true;
+      }
+      else
+      {
+        m_isMetricE2Case = false;
+      }
+#endif
+    }
+#endif
   }
   else // Inter slices
   {
+#if LMCS3_ENABLE_DEBUG_PRINTS
+    if (pic.TLayer == 0)
+    {
+      printf("LMCS, tid0 bpic : pic->m_picShared->m_temporalActGopAvg = %lf\n", picTemporalActGopAvg);
+    }
+#endif
     m_sliceReshapeInfo.sliceReshaperModelPresent = false;
     m_sliceReshapeInfo.enableChromaAdj = m_chromaAdj;
     if (!m_reshape) { m_sliceReshapeInfo.sliceReshaperEnabled = false; }
@@ -674,6 +763,33 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
           m_sliceReshapeInfo.sliceReshaperEnabled = false;
         }
       }
+
+#if LMCS3_METRIC_ANALYZER
+      if (m_metricChecker)
+      {
+#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+        if (m_isSccLowTemporalCase)
+        {
+          m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
+        }
+#endif
+
+#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+        if (m_isMetricE2Case)
+        {
+          m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
+        }
+#endif
+
+#if LMCS3_D_GATE_AT_INTER_TID0
+        if (pic.cs->slice->TLayer == 0)
+        {
+          calcSeqStats(pic, m_srcSeqStats);
+          parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, false);
+        }
+#endif
+      }
+#endif
     }
   }
 }
@@ -1001,6 +1117,114 @@ void EncReshape::deriveReshapeParametersSDR(bool *intraAdp, bool *interAdp)
     if (m_useAdpCW && !isLowCase) { m_reshapeCW.binCW[1] = 66 - m_reshapeCW.binCW[0]; }
   }
 }
+
+#if LMCS3_METRIC_ANALYZER
+void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod)
+{
+  const int width = pic.getOrigBuf(COMP_Y).width;
+  const int height = pic.getOrigBuf(COMP_Y).height;
+  bool disableCurIPOrFrame = false;
+
+#if LMCS3_A_GATE_TEMPORAL_AVG
+  if (!disableCurIPOrFrame)
+  {
+    disableCurIPOrFrame = pic.picTemporalActYGopAvg > LMCS3_A_METRIC_THRESHOLD;
+  }
+#endif
+#if LMCS3_B_GATE_M1_M2_M3
+  if (!disableCurIPOrFrame)
+  {
+    //Metric 1 - Weighted Variance of Variance
+    double wVarOfVar = 0;
+    for (int i = 1; i < m_binNum - 1; i++)
+    {
+      double meanVar = stats.binVar[i];
+      for (int j = 0; j < 60; j++)
+      {
+        wVarOfVar += pow((double)j / 10 - meanVar, 2) * stats.quantVar[i][j];
+      }
+    }
+    wVarOfVar /= width * height;
+
+    //Metric 2 - numSamples greater than/ equal to 3.0 variance
+    double numSamplesVarGTE3 = 0;
+    for (int i = 1; i < m_binNum - 1; i++)
+    {
+      for (int j = 30; j < 60; j++)
+      {
+        numSamplesVarGTE3 += stats.quantVar[i][j];
+      }
+    }
+    numSamplesVarGTE3 /= width * height;
+
+    //Metric 3 - CW weighted difference
+    double cwWeightedDiff = 0;
+    for (int i = 1; i < m_binNum - 1; i++)
+    {
+      int lowVarSamples = 0;
+      int highVarSamples = 0;
+      for (int j = 0; j < 60; j++)
+      {
+        if (j < 30)
+        {
+          lowVarSamples += stats.quantVar[i][j];
+        }
+        else
+        {
+          highVarSamples += stats.quantVar[i][j];
+        }
+      }
+      cwWeightedDiff += (lowVarSamples - highVarSamples) * (m_binCW[i] - m_initCWAnalyze);
+    }
+    cwWeightedDiff /= width * height;
+
+    if (wVarOfVar < LMCS3_B_M1_THRESHOLD)
+    {
+      if (numSamplesVarGTE3 > LMCS3_B_M2_THRESHOLD && cwWeightedDiff < LMCS3_B_M3_THRESHOLD)
+      {
+        disableCurIPOrFrame = true;
+      }
+    }
+    else
+    {
+      disableCurIPOrFrame = true;
+    }
+  }
+#endif
+#if LMCS3_E1_GATE_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+  if (!disableCurIPOrFrame)
+  {
+    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > LMCS3_E1_METRIC_THRESHOLD && m_sliceReshapeInfo.sliceReshaperEnabled == true);
+  }
+#endif
+#if LMCS3_F_GATE
+  if (!disableCurIPOrFrame)
+  {
+    disableCurIPOrFrame = (pic.ratioPicsWithTempAct1 >= LMCS3_F_R1_THRESHOLD && pic.ratioPicsWithTempAct2 >= LMCS3_F_R2_THRESHOLD && pic.picTemporalActYGopAvg >= LMCS3_F_AVG_TEMP_THRESHOLD);
+  }
+#endif
+#if LMCS3_G_GATE_SCD
+  if (!disableCurIPOrFrame)
+  {
+    disableCurIPOrFrame = pic.numGOPSceneCuts > LMCS3_G_SCD_MIN;
+  }
+#endif
+
+  if (disableCurIPOrFrame)
+  {
+    if (disableIntraPeriod)
+    {
+      m_sliceReshapeInfo.sliceReshaperModelPresent = false;
+      m_sliceReshapeInfo.sliceReshaperEnabled = false;
+      m_reshape = false;
+    }
+    else
+    {
+      m_sliceReshapeInfo.sliceReshaperEnabled = false;
+    }
+  }
+}
+#endif
 
 void EncReshape::deriveReshapeParameters(double *array, int start, int end, vvencReshapeCW respCW, double &alpha, double &beta)
 {

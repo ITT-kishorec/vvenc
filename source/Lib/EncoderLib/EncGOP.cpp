@@ -298,6 +298,9 @@ void EncGOP::init( const VVEncCfg& encCfg, RateCtrl& rateCtrl, NoMallocThreadPoo
   m_pcRateCtrl    = &rateCtrl;
   m_threadPool    = threadPool;
   m_isPreAnalysis = isPreAnalysis;
+#if LMCS3_METRIC_PREANALYSIS
+  m_numGOPStatsProcessed = 0;
+#endif 
 
   // setup parameter sets
   const int dciId = m_pcEncCfg->m_decodingParameterSetEnabled ? 1 : 0;
@@ -1230,7 +1233,16 @@ void EncGOP::xInitPPS(PPS &pps, const SPS &sps) const
   bool bChromaDeltaQPEnabled = false;
   {
     bChromaDeltaQPEnabled = ( m_pcEncCfg->m_sliceChromaQpOffsetIntraOrPeriodic[ 0 ] || m_pcEncCfg->m_sliceChromaQpOffsetIntraOrPeriodic[ 1 ] );
+#if RCLOOKAHEAD_RELATED_CHANGES
+    if (m_pcEncCfg->m_lumaReshapeEnable == 3)
+    {
+      bChromaDeltaQPEnabled |= (m_pcEncCfg->m_usePerceptQPA || m_pcEncCfg->m_sliceChromaQpOffsetPeriodicity > 0) && (m_pcEncCfg->m_internChromaFormat != VVENC_CHROMA_400);
+    }
+    else
+#endif
+    {
     bChromaDeltaQPEnabled |= (m_pcEncCfg->m_usePerceptQPA || (m_pcEncCfg->m_LookAhead && m_pcRateCtrl->m_pcEncCfg->m_RCTargetBitrate) || m_pcEncCfg->m_sliceChromaQpOffsetPeriodicity > 0) && (m_pcEncCfg->m_internChromaFormat != VVENC_CHROMA_400);
+    }
     if ( !bChromaDeltaQPEnabled && sps.dualITree && ( m_pcEncCfg->m_internChromaFormat != VVENC_CHROMA_400) )
     {
       bChromaDeltaQPEnabled = (m_pcEncCfg->m_chromaCbQpOffsetDualTree != 0 || m_pcEncCfg->m_chromaCrQpOffsetDualTree != 0 || m_pcEncCfg->m_chromaCbCrQpOffsetDualTree != 0);
@@ -1604,6 +1616,9 @@ bool EncGOP::xIsSliceTemporalSwitchingPoint( const Slice* slice, const PicList& 
 void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const PicList& picList, bool isEncodeLtRef )
 {
   const size_t size = m_pcEncCfg->m_maxParallelFrames > 0 ? encList.size() : 1;
+#if LMCS3_METRIC_PREANALYSIS
+  const int intraPeriod = m_pcEncCfg->m_IntraPeriod;
+#endif
   for( int i = 0; i < size; i++ )
   {
     Picture* pic = encList[ i ];
@@ -1613,6 +1628,147 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 
       xInitFirstSlice( *pic, picList, isEncodeLtRef );
 
+#if LMCS3_METRIC_PREANALYSIS
+      picStat curPicStat;
+      curPicStat.pocId = pic->poc;
+      curPicStat.tId = pic->TLayer;
+      curPicStat.sliceType = (pic->cs->slice)->sliceType;
+      curPicStat.picTemporalAct = pic->picTemporalActY;
+      curPicStat.picSpatialAct = pic->picSpatialActY;
+      curPicStat.picVisAct = pic->picVisActY;
+      curPicStat.pic = pic;
+
+      m_gopTemporalActivity.push_back(curPicStat);
+#endif
+      pic->encTime.stopTimer();
+#if !LMCS3_METRIC_PREANALYSIS
+      m_gopEncListInput.push_back( pic );
+      m_gopEncListOutput.push_back( pic );
+#endif
+      m_pocEncode = pic->poc;
+    }
+  }
+
+#if LMCS3_METRIC_PREANALYSIS
+  if (m_isPreAnalysis)
+  {
+    double gopTemporalActivityAvg = 0;
+    double gopSpatialActivityAvg = 0;
+#if LMCS3_G_GATE_SCD
+    int gopSceneCuts = 0;
+#endif
+#if LMCS3_F_GATE
+    /* Hold all the pics->temporalAct to be processed at the end*/
+    std::vector<double> curGOPTemporalActivity;
+    double ratioPicsWithTempAct1 = 0; //Percent Pics with Temporal Activity Greater than 3 * TempActAvg
+    double ratioPicsWithTempAct2 = 0; //Percent Pics with Temporal Activity Less than 0.5 * TempActAvg
+#endif
+    int numPicsInGop = 0;
+    bool gopStart = false, gopEnd = false;
+    Picture* Ipic;
+    for (auto it = m_gopTemporalActivity.begin(); it != m_gopTemporalActivity.end(); it++)
+    {
+#if LMCS3_ENABLE_DEBUG_PRINTS
+      printf("poc = %d, tid = %d, sliceType = %d, act = %lf\n", it->pocId, it->tId, it->sliceType, it->picTemporalAct);
+#endif
+      if (it->pocId - (m_pcEncCfg->m_GOPSize * m_numGOPStatsProcessed) == 0)
+      {
+        Ipic = it->pic;
+        gopStart = true;
+      }
+      else if (gopStart && it->sliceType == 2)
+      {
+        gopEnd = true;
+      }
+
+      if (gopStart && !gopEnd)
+      {
+#if LMCS3_G_GATE_SCD
+        picStat* prevPicStats = NULL;
+        Picture* curPic = it->pic;
+
+        for (auto picStatItr = m_gopTemporalActivity.begin(); picStatItr != m_gopTemporalActivity.end(); picStatItr++)
+        {
+          if (picStatItr->pocId == ((it->pocId) - 1))
+          {
+            prevPicStats = &(*picStatItr);
+            break;
+          }
+        }
+  
+        if (prevPicStats)
+        {
+          //Check cut-scene at curPic (Ipic skipped)
+          bool isNewScene = (curPic->picVisActY * 64 > prevPicStats->picVisAct * 181); //|| (curPic->TLayer <= 1 && curPic->picVisActY <= (1u << (m_pcEncCfg->m_internalBitDepth[CH_L] - 6))));
+          if (curPic != Ipic)
+          {
+            gopSceneCuts += isNewScene;
+          }
+#if LMCS3_ENABLE_DEBUG_PRINTS
+          printf("picid with scene cut = %d ,curPic->picVisActY = %lf, prevPic->picVisActY = %lf, cond1 = %d, cond2 = %d ,  prevPoc = %d\n", it->pocId, curPic->picVisActY, prevPicStats->picVisAct, (curPic->picVisActY * 64 > prevPicStats->picVisAct * 181), curPic->TLayer <= 1 && curPic->picVisActY <= (1u << (m_pcEncCfg->m_internalBitDepth[CH_L] - 6)), prevPicStats->pocId);
+#endif
+        }
+#endif
+        gopTemporalActivityAvg += it->picTemporalAct;
+        gopSpatialActivityAvg += it->picSpatialAct;
+#if LMCS3_F_GATE
+        curGOPTemporalActivity.push_back(it->picTemporalAct);
+#endif
+        numPicsInGop++;
+      }
+    }
+  
+    if (numPicsInGop >= m_pcEncCfg->m_GOPSize)
+    {
+      gopTemporalActivityAvg /= numPicsInGop;
+      gopSpatialActivityAvg /= numPicsInGop;
+
+#if LMCS3_F_GATE
+      for (auto it = curGOPTemporalActivity.begin(); it != curGOPTemporalActivity.end(); it++)
+      {
+        double curPicTemporalAct = (*it);
+        if (curPicTemporalAct > 3 * gopTemporalActivityAvg)
+        {
+          ratioPicsWithTempAct1++;
+        }
+
+        if (curPicTemporalAct < 0.5 * gopTemporalActivityAvg)
+        {
+          ratioPicsWithTempAct2++;
+        }
+      }
+
+      ratioPicsWithTempAct1 /= numPicsInGop;
+      ratioPicsWithTempAct2 /= numPicsInGop;
+#endif
+
+      if (!(Ipic->isGopActivityAvailable))
+      {
+        Ipic->isGopActivityAvailable = true;
+        Ipic->m_picShared->m_temporalActGopAvg = gopTemporalActivityAvg;
+        Ipic->m_picShared->m_spatialActGopAvg = gopSpatialActivityAvg;
+#if LMCS3_G_GATE_SCD
+        Ipic->m_picShared->m_numGOPSceneCuts = gopSceneCuts;
+#endif
+#if LMCS3_F_GATE
+        Ipic->m_picShared->m_ratioPicsWithTempAct1 = ratioPicsWithTempAct1;
+        Ipic->m_picShared->m_ratioPicsWithTempAct2 = ratioPicsWithTempAct2;
+#endif
+      }
+      m_numGOPStatsProcessed++;
+    }
+  }
+  
+  for (int i = 0; i < size; i++)
+  {
+    Picture* pic = encList[i];
+    if (!pic->isInitDone)
+    {
+      pic->encTime.startTimer();
+
+      (*pic).isInitDone = true;
+      m_bFirstInit = false;
+
       pic->encTime.stopTimer();
 
       m_gopEncListInput.push_back( pic );
@@ -1620,6 +1776,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
       m_pocEncode = pic->poc;
     }
   }
+#endif
 }
 
 void EncGOP::xGetProcessingLists( std::list<Picture*>& procList, std::list<Picture*>& rcUpdateList )
@@ -1905,6 +2062,17 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   pic.cs->allocateVectorsAtPicLevel();
   pic.isReferenced = true;
 
+#if RCLOOKAHEAD_RELATED_CHANGES
+  if (m_pcEncCfg->m_RCLookAhead)
+  {
+	  const Slice* sliceForAct = pic.slices[0];
+	  pic.picVisActY = BitAllocation::getPicVisualActivity(sliceForAct, m_pcEncCfg);
+	  pic.picTemporalActY = BitAllocation::getPicTemporalActivity(sliceForAct, m_pcEncCfg);
+	  pic.picSpatialActY = BitAllocation::getPicSpatialActivity(sliceForAct, m_pcEncCfg);
+  }
+#endif
+
+  CHECK(slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing");
   // reshaper
   xInitLMCS( pic );
 
@@ -1920,7 +2088,7 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
       alfAPS->ccAlfParam.reset();
     }
   }
-  CHECK( slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing" );
+  //CHECK( slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing" );
 
   if( pic.poc == m_pcEncCfg->m_switchPOC )
   {
@@ -1928,9 +2096,11 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   }
   pic.seqBaseQp = m_pcEncCfg->m_QP + m_appliedSwitchDQQ;
 
+#if !LMCS3_METRIC_PREANALYSIS
   pic.isInitDone = true;
 
   m_bFirstInit = false;
+#endif
 }
 
 void EncGOP::xInitSliceTMVPFlag( PicHeader* picHeader, const Slice* slice, int gopId )

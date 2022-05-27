@@ -84,6 +84,17 @@ struct StopClock
   std::chrono::steady_clock::duration   m_timer;
 };
 
+#if LMCS3_METRIC_PREANALYSIS
+struct picStat {
+  int     pocId;
+  int     tId;
+  int     sliceType;
+  double	picTemporalAct;
+  double	picSpatialAct;
+  double	picVisAct;
+  Picture* pic;
+};
+#endif
 
 struct Picture;
 
@@ -232,7 +243,23 @@ public:
   int                           picInitialQP;
   uint16_t                      picVisActTL0;
   uint16_t                      picVisActY;
-
+#if RCLOOKAHEAD_RELATED_CHANGES
+  double                        picTemporalActY;
+  double                        picSpatialActY;
+#endif
+#if LMCS3_METRIC_PREANALYSIS
+  double                        picTemporalActYGopAvg;
+  double                        picSpatialActYGopAvg;
+  bool                          isGopActivityAvailable;
+  int                           numGOPSceneCuts;
+#if LMCS3_F_GATE
+  double                        ratioPicsWithTempAct1;
+  double                        ratioPicsWithTempAct2;
+#endif
+#endif
+#if PUBLISH_MCTF_INFO
+  double                        mctfTotalError;
+#endif
   StopClock                     encTime;
   bool                          isSccWeak;
   bool                          isSccStrong;

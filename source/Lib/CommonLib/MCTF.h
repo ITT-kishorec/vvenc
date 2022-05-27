@@ -63,9 +63,16 @@ class NoMallocThreadPool;
 struct MotionVector
 {
   int x, y;
+#if PUBLISH_MCTF_INFO
+  int errorME;
+#endif
   int error;
   int noise;
+#if PUBLISH_MCTF_INFO
+  MotionVector() : x(0), y(0), errorME(INT_LEAST32_MAX), error(INT_LEAST32_MAX), noise(0) {}
+#else 
   MotionVector() : x(0), y(0), error(INT_LEAST32_MAX), noise(0) {}
+#endif
 
   void set(int vectorX, int vectorY, int errorValue) { x = vectorX; y = vectorY; error = errorValue; }
 };

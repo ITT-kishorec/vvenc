@@ -228,6 +228,173 @@ static double filterAndCalculateAverageActivity (const Pel* pSrc, const int iSrc
   return std::max (meanAct, double (1 << (bitDepth - 6)));
 }
 
+#if RCLOOKAHEAD_RELATED_CHANGES
+static double filterAndCalculateAverageTemporalActivity(const Pel* pSrc, const int iSrcStride, const int height, const int width,
+  const Pel* pSM1, const int iSM1Stride, const Pel* pSM2, const int iSM2Stride,
+  uint32_t frameRate, const uint32_t bitDepth, const bool isUHD)
+{
+  double meanAct = 0.0;
+  uint64_t taAct = 0;  // temporal absolute activity sum
+  const Pel* pS0 = pSrc;
+
+  if (pSrc == nullptr || iSrcStride <= 0) return 0.0;
+  // force 1st-order delta if only prev. frame available
+  if (pSM2 == nullptr || iSM2Stride <= 0) frameRate = 24;
+
+  // skip first row as there may be a black border frame
+  pSrc = pS0 + iSrcStride;
+  // center rows
+  if (isUHD) // high-pass with downsampling
+  {
+    const int i2M0Stride = iSrcStride * 2;
+    const int i2M1Stride = iSM1Stride * 2;
+
+    CHECK(pSM1 == nullptr || iSM1Stride <= 0 || iSM1Stride < width, "Pel buffer pointer pSM1 must not be null!");
+
+    pSrc += iSrcStride;
+    pSM1 += i2M1Stride;
+    if (frameRate <= 31) // 1st-order delta
+    {
+      for (int y = 2; y < height - 2; y += 2)
+      {
+        for (int x = 2; x < width - 2; x += 2) // c cols
+        {
+          const int t = (int)pSrc[x] + (int)pSrc[x + 1] + (int)pSrc[x + iSrcStride] + (int)pSrc[x + 1 + iSrcStride]
+            - ((int)pSM1[x] + (int)pSM1[x + 1] + (int)pSM1[x + iSM1Stride] + (int)pSM1[x + 1 + iSM1Stride]);
+          taAct += (1 + 3 * abs(t)) >> 1;
+        }
+        pSrc += i2M0Stride;
+        pSM1 += i2M1Stride;
+      }
+    }
+    else // 2nd-order delta (diff of diffs)
+    {
+      const int i2M2Stride = iSM2Stride * 2;
+
+      CHECK(pSM2 == nullptr || iSM2Stride <= 0 || iSM2Stride < width, "Pel buffer pointer pSM2 must not be null!");
+
+      pSM2 += i2M2Stride;
+      for (int y = 2; y < height - 2; y += 2)
+      {
+        for (int x = 2; x < width - 2; x += 2) // c cols
+        {
+          const int t = (int)pSrc[x] + (int)pSrc[x + 1] + (int)pSrc[x + iSrcStride] + (int)pSrc[x + 1 + iSrcStride]
+            - 2 * ((int)pSM1[x] + (int)pSM1[x + 1] + (int)pSM1[x + iSM1Stride] + (int)pSM1[x + 1 + iSM1Stride])
+            + (int)pSM2[x] + (int)pSM2[x + 1] + (int)pSM2[x + iSM2Stride] + (int)pSM2[x + 1 + iSM2Stride];
+          taAct += abs(t);
+        }
+        pSrc += i2M0Stride;
+        pSM1 += i2M1Stride;
+        pSM2 += i2M2Stride;
+      }
+    }
+
+    meanAct += (2.0 * taAct) / double((width - 4) * (height - 4));
+  }
+  else // HD high-pass without downsampling
+  {
+    CHECK(pSM1 == nullptr || iSM1Stride <= 0 || iSM1Stride < width, "Pel buffer pointer pSM1 must not be null!");
+
+    pSM1 += iSM1Stride;
+    if (frameRate <= 31) // 1st-order delta
+    {
+      for (int y = 1; y < height - 1; y++)
+      {
+        for (int x = 1; x < width - 1; x++)  // cnt cols
+        {
+          const int t = (int)pSrc[x] - (int)pSM1[x];
+
+          taAct += (1 + 3 * abs(t)) >> 1;
+        }
+        pSrc += iSrcStride;
+        pSM1 += iSM1Stride;
+      }
+    }
+    else // 2nd-order delta (diff of diffs)
+    {
+      CHECK(pSM2 == nullptr || iSM2Stride <= 0 || iSM2Stride < width, "Pel buffer pointer pSM2 must not be null!");
+
+      pSM2 += iSM2Stride;
+      for (int y = 1; y < height - 1; y++)
+      {
+        for (int x = 1; x < width - 1; x++)  // cnt cols
+        {
+          const int t = (int)pSrc[x] - 2 * (int)pSM1[x] + (int)pSM2[x];
+
+          taAct += abs(t);
+        }
+        pSrc += iSrcStride;
+        pSM1 += iSM1Stride;
+        pSM2 += iSM2Stride;
+      }
+    }
+
+    meanAct += (2.0 * taAct) / double((width - 2) * (height - 2));
+  }
+
+  return meanAct;
+}
+
+static double filterAndCalculateAverageSpatialActivity(const Pel* pSrc, const int iSrcStride, const int height, const int width,
+  const Pel* pSM1, const int iSM1Stride, const Pel* pSM2, const int iSM2Stride,
+  uint32_t frameRate, const uint32_t bitDepth, const bool isUHD)
+{
+  double meanAct = 0.0;
+  uint64_t saAct = 0;   // spatial absolute activity sum
+
+  if (pSrc == nullptr || iSrcStride <= 0) return 0.0;
+  // force 1st-order delta if only prev. frame available
+  if (pSM2 == nullptr || iSM2Stride <= 0) frameRate = 24;
+
+  // skip first row as there may be a black border frame
+  pSrc += iSrcStride;
+  // center rows
+  if (isUHD) // high-pass with downsampling
+  {
+    const int i2ndStride = iSrcStride * 2;
+    const int i3rdStride = iSrcStride * 3;
+
+    pSrc += iSrcStride;
+    for (int y = 2; y < height - 2; y += 2)
+    {
+      for (int x = 2; x < width - 2; x += 2) // cnt cols
+      {
+        const int s = 12 * ((int)pSrc[x] + (int)pSrc[x + 1] + (int)pSrc[x + iSrcStride] + (int)pSrc[x + 1 + iSrcStride])
+          - 3 * ((int)pSrc[x - 1] + (int)pSrc[x + 2] + (int)pSrc[x - 1 + iSrcStride] + (int)pSrc[x + 2 + iSrcStride]
+            + (int)pSrc[x - iSrcStride] + (int)pSrc[x + 1 - iSrcStride] + (int)pSrc[x + i2ndStride] + (int)pSrc[x + 1 + i2ndStride])
+          - 2 * ((int)pSrc[x - 1 - iSrcStride] + (int)pSrc[x + 2 - iSrcStride] + (int)pSrc[x - 1 + i2ndStride] + (int)pSrc[x + 2 + i2ndStride])
+          - ((int)pSrc[x - 1 - i2ndStride] + (int)pSrc[x - i2ndStride] + (int)pSrc[x + 1 - i2ndStride] + (int)pSrc[x + 2 - i2ndStride]
+            + (int)pSrc[x - 1 + i3rdStride] + (int)pSrc[x + i3rdStride] + (int)pSrc[x + 1 + i3rdStride] + (int)pSrc[x + 2 + i3rdStride]
+            + (int)pSrc[x - 2 - iSrcStride] + (int)pSrc[x - 2] + (int)pSrc[x - 2 + iSrcStride] + (int)pSrc[x - 2 + i2ndStride]
+            + (int)pSrc[x + 3 - iSrcStride] + (int)pSrc[x + 3] + (int)pSrc[x + 3 + iSrcStride] + (int)pSrc[x + 3 + i2ndStride]);
+        saAct += abs(s);
+      }
+      pSrc += i2ndStride;
+    }
+
+    meanAct = double(saAct) / double((width - 4) * (height - 4));
+  }
+  else // HD high-pass without downsampling
+  {
+    for (int y = 1; y < height - 1; y++)
+    {
+      for (int x = 1; x < width - 1; x++) // center cols
+      {
+        const int s = 12 * (int)pSrc[x] - 2 * ((int)pSrc[x - 1] + (int)pSrc[x + 1] + (int)pSrc[x - iSrcStride] + (int)pSrc[x + iSrcStride])
+          - ((int)pSrc[x - 1 - iSrcStride] + (int)pSrc[x + 1 - iSrcStride] + (int)pSrc[x - 1 + iSrcStride] + (int)pSrc[x + 1 + iSrcStride]);
+        saAct += abs(s);
+      }
+      pSrc += iSrcStride;
+    }
+
+    meanAct = double(saAct) / double((width - 2) * (height - 2));
+  }
+
+  // lower limit, compensate for high-pass amplification
+  return std::max(meanAct, double(1 << (bitDepth - 6)));
+}
+#endif
+
 static double getAveragePictureActivity (const uint32_t picWidth,  const uint32_t picHeight,
                                          const int scaledAverageGopActivity,
                                          const bool tempFiltering, const uint32_t bitDepth)
@@ -708,6 +875,39 @@ bool BitAllocation::isTempLayer0IntraFrame (const Slice* slice, const VVEncCfg* 
 
   return false;
 }
+#if RCLOOKAHEAD_RELATED_CHANGES
+double BitAllocation::getPicTemporalActivity(const Slice* slice, const VVEncCfg* encCfg)
+{
+  Picture* const pic = (slice != nullptr ? slice->pic : nullptr);
+
+  if (pic == nullptr || encCfg == nullptr) return 0.0;
+
+  const bool isHighRes = (encCfg->m_PadSourceWidth > 2048 || encCfg->m_PadSourceHeight > 1280);
+  const CPelBuf picOrig = pic->getOrigBuf(COMP_Y);
+  const CPelBuf picPrv1 = pic->getOrigBufPrev(COMP_Y, false);
+  const CPelBuf picPrv2 = pic->getOrigBufPrev(COMP_Y, true);
+
+  return filterAndCalculateAverageTemporalActivity(picOrig.buf, picOrig.stride, picOrig.height, picOrig.width,
+    picPrv1.buf, picPrv1.stride, picPrv2.buf, picPrv2.stride, encCfg->m_FrameRate / encCfg->m_FrameScale,
+    slice->sps->bitDepths[CH_L], isHighRes);
+}
+
+double BitAllocation::getPicSpatialActivity(const Slice* slice, const VVEncCfg* encCfg)
+{
+  Picture* const pic = (slice != nullptr ? slice->pic : nullptr);
+
+  if (pic == nullptr || encCfg == nullptr) return 0.0;
+
+  const bool isHighRes = (encCfg->m_PadSourceWidth > 2048 || encCfg->m_PadSourceHeight > 1280);
+  const CPelBuf picOrig = pic->getOrigBuf(COMP_Y);
+  const CPelBuf picPrv1 = pic->getOrigBufPrev(COMP_Y, false);
+  const CPelBuf picPrv2 = pic->getOrigBufPrev(COMP_Y, true);
+
+  return filterAndCalculateAverageSpatialActivity(picOrig.buf, picOrig.stride, picOrig.height, picOrig.width,
+    picPrv1.buf, picPrv1.stride, picPrv2.buf, picPrv2.stride, encCfg->m_FrameRate / encCfg->m_FrameScale,
+    slice->sps->bitDepths[CH_L], isHighRes);
+}
+#endif
 
 } // namespace vvenc
 
