@@ -63,7 +63,7 @@ struct SeqInfo
   : binVar { 0.0 }
   , binHist { 0.0 }
   , normVar { 0.0 }
-#if LMCS3_METRIC_ANALYZER
+#if LMCS3_B_GATE_M1_M2_M3
   , quantVar { 0 }
 #endif
   , nonZeroCnt(0)

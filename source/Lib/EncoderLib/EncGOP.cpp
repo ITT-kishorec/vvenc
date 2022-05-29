@@ -2056,7 +2056,7 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   pic.cs->allocateVectorsAtPicLevel();
   pic.isReferenced = true;
 
-#if RCLOOKAHEAD_RELATED_CHANGES
+#if 0//RCLOOKAHEAD_RELATED_CHANGES
   if (m_pcEncCfg->m_LookAhead)
   {
 	  const Slice* sliceForAct = pic.slices[0];
