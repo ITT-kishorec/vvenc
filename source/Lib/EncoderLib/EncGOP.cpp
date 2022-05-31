@@ -1665,17 +1665,20 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 #endif
     int numPicsInGop = 0;
     bool gopStart = false, gopEnd = false;
+    std::vector<picStat>::iterator gopStartItr = m_gopTemporalActivity.end(), gopEndItr = m_gopTemporalActivity.end();
     Picture* Ipic;
-    for (auto it = m_gopTemporalActivity.begin(); it != m_gopTemporalActivity.end(); it++)
+	for (auto it = m_gopTemporalActivity.begin(); it != m_gopTemporalActivity.end(); it++)
     {
-      if (it->pocId - (m_pcEncCfg->m_GOPSize * m_numGOPStatsProcessed) == 0)
+      if (!gopStart && it->tId == 0)
       {
         Ipic = it->pic;
         gopStart = true;
+        gopStartItr = it;
       }
       else if (gopStart && it->sliceType == 2)
       {
         gopEnd = true;
+        gopEndItr = it;
       }
 
       if (gopStart && !gopEnd)
@@ -1709,11 +1712,18 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
         curGOPTemporalActivity.push_back(it->picTemporalAct);
 #endif
         numPicsInGop++;
+        gopEndItr = it + 1;
+        if (numPicsInGop >= m_pcEncCfg->m_GOPSize)
+        {
+          gopEnd = true;
+          break;
+        }
       }
     }
   
     if (numPicsInGop >= m_pcEncCfg->m_GOPSize)
     {
+      m_gopTemporalActivity.erase(gopStartItr, gopEndItr);
       gopTemporalActivityAvg /= numPicsInGop;
       gopSpatialActivityAvg /= numPicsInGop;
 
@@ -1738,7 +1748,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 
       if (!(Ipic->isGopActivityAvailable))
       {
-        Ipic->isGopActivityAvailable = true;
+		Ipic->isGopActivityAvailable = true;
         Ipic->m_picShared->m_temporalActGopAvg = gopTemporalActivityAvg;
         Ipic->m_picShared->m_spatialActGopAvg = gopSpatialActivityAvg;
 #if LMCS3_G_GATE_SCD

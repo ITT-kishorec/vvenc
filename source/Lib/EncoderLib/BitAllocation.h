@@ -68,10 +68,6 @@ namespace vvenc {
                                  std::vector<int>& ctuPumpRedQP, const uint32_t ctuRsAddr, const int baseQP);
     double getPicVisualActivity (const Slice* slice, const VVEncCfg* encCfg, const CPelBuf* origPrev = nullptr);
     bool isTempLayer0IntraFrame (const Slice* slice, const VVEncCfg* encCfg, const PicList& picList, const bool rcIsFinalPass);
-#if 0 //RCLOOKAHEAD_RELATED_CHANGES
-    double getPicTemporalActivity(const Slice* slice, const VVEncCfg* encCfg);
-    double getPicSpatialActivity(const Slice* slice, const VVEncCfg* encCfg);
-#endif
   }
 
 } // namespace vvenc

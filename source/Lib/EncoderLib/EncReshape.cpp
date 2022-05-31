@@ -480,7 +480,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     m_isMetricE2Case = false;
 #endif
 #endif
-    if (m_sliceReshapeInfo.sliceReshaperModelPresent == true)
+	if (m_sliceReshapeInfo.sliceReshaperModelPresent == true)
     {
       m_reshapeCW = reshapeCW;
       m_binNum = PIC_CODE_CW_BINS;
