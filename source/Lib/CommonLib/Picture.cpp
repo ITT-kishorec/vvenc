@@ -181,7 +181,7 @@ Picture::Picture()
     , picTemporalActY(0)
     , picSpatialActY(0)
 #endif
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
     , picTemporalActYGopAvg(0.0)
     , picSpatialActYGopAvg(0.0)
     , isGopActivityAvailable(false)

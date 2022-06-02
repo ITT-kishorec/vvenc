@@ -61,7 +61,7 @@ public:
   PicShared()
   : m_isSccWeak  ( false )
   , m_isSccStrong( false )
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
   , m_temporalActGopAvg ( 0.0 )
   , m_spatialActGopAvg  ( 0.0 )
   , m_numGOPSceneCuts   ( 0 )
@@ -118,7 +118,7 @@ public:
     m_isLead      = poc < 0;
     m_isTrail     = m_maxFrames > 0 && poc >= m_maxFrames;
     m_ctsValid    = yuvInBuf->ctsValid;
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
     m_temporalActGopAvg = 0;
     m_spatialActGopAvg = 0;
     m_numGOPSceneCuts = 0;
@@ -144,7 +144,7 @@ public:
     pic->poc         = m_poc;
     pic->cts         = m_cts;
     pic->ctsValid    = m_ctsValid;
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
     pic->picTemporalActYGopAvg = m_temporalActGopAvg;
     pic->picSpatialActYGopAvg = m_spatialActGopAvg;
     pic->numGOPSceneCuts = m_numGOPSceneCuts;
@@ -194,7 +194,7 @@ public:
   PicShared* m_prevShared[ NUM_PREV_FRAMES ];
   bool       m_isSccWeak;
   bool       m_isSccStrong;
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
   double     m_temporalActGopAvg;
   double     m_spatialActGopAvg;
   int        m_numGOPSceneCuts;

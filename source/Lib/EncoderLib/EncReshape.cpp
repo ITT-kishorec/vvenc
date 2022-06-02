@@ -70,7 +70,7 @@ EncReshape::EncReshape()
   , m_chromaWeight  (1.0)
   , m_chromaAdj     (0)
   , m_binNum        (0)
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
   , m_metricChecker         (false)
 #if SCREEN_CONTENT_GATING
   , m_isSccLowTemporalCase  (false)
@@ -143,7 +143,7 @@ void  EncReshape::init( const VVEncCfg& encCfg )
     m_signalType = encCfg.m_reshapeSignalType;
     m_chromaWeight = 1.0;
 
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
     m_metricChecker = (encCfg.m_lumaReshapeEnable == 3);
 #endif
     initLumaLevelToWeightTableReshape();
@@ -461,7 +461,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   double picTemporalAct = pic.picTemporalActY;
   (void)picTemporalAct;
 #endif
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
   double picTemporalActGopAvg = pic.picTemporalActYGopAvg;
   double picSpatialActGopAvg = pic.picSpatialActYGopAvg;
   double gopAvgTemporalToAvgSpatialRatio = picTemporalActGopAvg / picSpatialActGopAvg;
@@ -472,7 +472,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
 
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
 #if SCREEN_CONTENT_GATING
     m_isSccLowTemporalCase = false;
 #endif
@@ -572,7 +572,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       {
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
         m_reshape = false;
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
 #if SCREEN_CONTENT_GATING
         m_isSccLowTemporalCase = false;
 #endif
@@ -616,7 +616,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     }
     m_chromaAdj = m_sliceReshapeInfo.enableChromaAdj;
 
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
     if (m_metricChecker)
     {
       parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
@@ -751,7 +751,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
         }
       }
 
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
       if (m_metricChecker)
       {
 #if SCREEN_CONTENT_GATING
@@ -1105,7 +1105,7 @@ void EncReshape::deriveReshapeParametersSDR(bool *intraAdp, bool *interAdp)
   }
 }
 
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
 void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod)
 {
   const int width = pic.getOrigBuf(COMP_Y).width;

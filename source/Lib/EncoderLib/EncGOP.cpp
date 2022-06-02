@@ -298,7 +298,7 @@ void EncGOP::init( const VVEncCfg& encCfg, RateCtrl& rateCtrl, NoMallocThreadPoo
   m_pcRateCtrl    = &rateCtrl;
   m_threadPool    = threadPool;
   m_isPreAnalysis = isPreAnalysis;
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
   m_numGOPStatsProcessed = 0;
 #endif 
 
@@ -1616,7 +1616,7 @@ bool EncGOP::xIsSliceTemporalSwitchingPoint( const Slice* slice, const PicList& 
 void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const PicList& picList, bool isEncodeLtRef )
 {
   const size_t size = m_pcEncCfg->m_maxParallelFrames > 0 ? encList.size() : 1;
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
   const int intraPeriod = m_pcEncCfg->m_IntraPeriod;
 #endif
   for( int i = 0; i < size; i++ )
@@ -1628,7 +1628,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 
       xInitFirstSlice( *pic, picList, isEncodeLtRef );
 
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
       picStat curPicStat;
       curPicStat.pocId = pic->poc;
       curPicStat.tId = pic->TLayer;
@@ -1641,7 +1641,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
       m_gopTemporalActivity.push_back(curPicStat);
 #endif
       pic->encTime.stopTimer();
-#if !LMCS3_METRIC_PREANALYSIS
+#if !LMCS_GATING_PARAM_EVALUATE
       m_gopEncListInput.push_back( pic );
       m_gopEncListOutput.push_back( pic );
 #endif
@@ -1649,7 +1649,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
     }
   }
 
-#if LMCS3_METRIC_PREANALYSIS
+#if LMCS_GATING_PARAM_EVALUATE
   if (m_isPreAnalysis)
   {
     double gopTemporalActivityAvg = 0;
@@ -2100,7 +2100,7 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   }
   pic.seqBaseQp = m_pcEncCfg->m_QP + m_appliedSwitchDQQ;
 
-#if !LMCS3_METRIC_PREANALYSIS
+#if !LMCS_GATING_PARAM_EVALUATE
   pic.isInitDone = true;
 
   m_bFirstInit = false;

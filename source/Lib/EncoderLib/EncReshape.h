@@ -106,7 +106,7 @@ private:
   double                  m_chromaWeight;
   int                     m_chromaAdj;
   int                     m_binNum;
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
   bool                    m_metricChecker;
 #if SCREEN_CONTENT_GATING
   bool                    m_isSccLowTemporalCase;
@@ -132,7 +132,7 @@ public:
   void cwPerturbation   ( int startBinIdx, int endBinIdx, uint16_t maxCW);
   void cwReduction      ( int startBinIdx, int endBinIdx);
   void deriveReshapeParametersSDR ( bool *intraAdp, bool *interAdp);
-#if LMCS3_METRIC_ANALYZER
+#if LMCS_GATING_VALIDATE
   void parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod);
 #endif
   void deriveReshapeParameters    ( double *array, int start, int end, vvencReshapeCW respCW, double &alpha, double &beta);
