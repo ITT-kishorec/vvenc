@@ -65,7 +65,7 @@ public:
   , m_temporalActGopAvg ( 0.0 )
   , m_spatialActGopAvg  ( 0.0 )
   , m_numGOPSceneCuts   ( 0 )
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
   , m_ratioPicsWithTempAct1 ( 0.0 )
   , m_ratioPicsWithTempAct2 ( 0.0 )
 #endif
@@ -122,7 +122,7 @@ public:
     m_temporalActGopAvg = 0;
     m_spatialActGopAvg = 0;
     m_numGOPSceneCuts = 0;
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
     m_ratioPicsWithTempAct1 = 0;
     m_ratioPicsWithTempAct2 = 0;
 #endif
@@ -148,7 +148,7 @@ public:
     pic->picTemporalActYGopAvg = m_temporalActGopAvg;
     pic->picSpatialActYGopAvg = m_spatialActGopAvg;
     pic->numGOPSceneCuts = m_numGOPSceneCuts;
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
     pic->ratioPicsWithTempAct1 = m_ratioPicsWithTempAct1;
     pic->ratioPicsWithTempAct2 = m_ratioPicsWithTempAct2;
 #endif
@@ -198,7 +198,7 @@ public:
   double     m_temporalActGopAvg;
   double     m_spatialActGopAvg;
   int        m_numGOPSceneCuts;
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
   double     m_ratioPicsWithTempAct1;
   double     m_ratioPicsWithTempAct2;
 #endif

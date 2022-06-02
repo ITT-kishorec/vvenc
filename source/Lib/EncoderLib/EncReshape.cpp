@@ -72,10 +72,10 @@ EncReshape::EncReshape()
   , m_binNum        (0)
 #if LMCS3_METRIC_ANALYZER
   , m_metricChecker         (false)
-#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+#if SCREEN_CONTENT_GATING
   , m_isSccLowTemporalCase  (false)
 #endif
-#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+#if HIGH_SPATIAL_ACTIVE_GATING
   , m_isMetricE2Case        (false)
 #endif
 #endif
@@ -362,7 +362,7 @@ void EncReshape::calcSeqStats(Picture& pic, SeqInfo &stats)
       double varLog10 = log10(variance + 1.0);
       stats.binVar[binIdx] += varLog10;
       binCnt[binIdx]++;
-#if LMCS3_B_GATE_M1_M2_M3
+#if SPATIAL_METRIC_GATING
       int quantVarIdx = std::min((int)floor(varLog10 * 10), 59);
       stats.quantVar[binIdx][quantVarIdx] ++;
 #endif
@@ -473,10 +473,10 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
 #if LMCS3_METRIC_ANALYZER
-#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+#if SCREEN_CONTENT_GATING
     m_isSccLowTemporalCase = false;
 #endif
-#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+#if HIGH_SPATIAL_ACTIVE_GATING
     m_isMetricE2Case = false;
 #endif
 #endif
@@ -573,10 +573,10 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
         m_reshape = false;
 #if LMCS3_METRIC_ANALYZER
-#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+#if SCREEN_CONTENT_GATING
         m_isSccLowTemporalCase = false;
 #endif
-#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+#if HIGH_SPATIAL_ACTIVE_GATING
         m_isMetricE2Case = false;
 #endif
 #endif
@@ -621,8 +621,8 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     {
       parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
 
-#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
-      if ((m_reshape == true) && pic.isSccStrong && (picTemporalActGopAvg < LMCS3_A_METRIC_THRESHOLD) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
+#if SCREEN_CONTENT_GATING
+      if ((m_reshape == true) && pic.isSccStrong && (picTemporalActGopAvg < TEMPORAL_ACTIVITY_THRESHOLD) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
       {
         m_isSccLowTemporalCase = true;
         m_sliceReshapeInfo.sliceReshaperEnabled = true;
@@ -633,8 +633,8 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       }
 #endif
 
-#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
-      if (gopAvgTemporalToAvgSpatialRatio < LMCS3_E2_METRIC_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
+#if HIGH_SPATIAL_ACTIVE_GATING
+      if (gopAvgTemporalToAvgSpatialRatio < HIGH_SPATIAL_ACTIVE_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
       {
         m_isMetricE2Case = true;
         m_sliceReshapeInfo.sliceReshaperEnabled = true;
@@ -754,21 +754,21 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
 #if LMCS3_METRIC_ANALYZER
       if (m_metricChecker)
       {
-#if LMCS3_C_SCC_LOWTEMPORAL_METRIC
+#if SCREEN_CONTENT_GATING
         if (m_isSccLowTemporalCase)
         {
           m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
         }
 #endif
 
-#if LMCS3_E2_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+#if HIGH_SPATIAL_ACTIVE_GATING
         if (m_isMetricE2Case)
         {
           m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
         }
 #endif
 
-#if LMCS3_D_GATE_AT_INTER_TID0
+#if TID0_PIC_GATING
         if (pic.cs->slice->TLayer == 0)
         {
           calcSeqStats(pic, m_srcSeqStats);
@@ -1112,13 +1112,13 @@ void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopA
   const int height = pic.getOrigBuf(COMP_Y).height;
   bool disableCurIPOrFrame = false;
 
-#if LMCS3_A_GATE_TEMPORAL_AVG
+#if TEMPORAL_ACTIVITY_GATING
   if (!disableCurIPOrFrame)
   {
-    disableCurIPOrFrame = pic.picTemporalActYGopAvg > LMCS3_A_METRIC_THRESHOLD;
+    disableCurIPOrFrame = pic.picTemporalActYGopAvg > TEMPORAL_ACTIVITY_THRESHOLD;
   }
 #endif
-#if LMCS3_B_GATE_M1_M2_M3
+#if SPATIAL_METRIC_GATING
   if (!disableCurIPOrFrame)
   {
     //Metric 1 - Weighted Variance of Variance
@@ -1165,9 +1165,9 @@ void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopA
     }
     cwWeightedDiff /= width * height;
 
-    if (wVarOfVar < LMCS3_B_M1_THRESHOLD)
+    if (wVarOfVar < SPATIAL_METRIC_M1_THRESHOLD)
     {
-      if (numSamplesVarGTE3 > LMCS3_B_M2_THRESHOLD && cwWeightedDiff < LMCS3_B_M3_THRESHOLD)
+      if (numSamplesVarGTE3 > SPATIAL_METRIC_M2_THRESHOLD && cwWeightedDiff < SPATIAL_METRIC_M3_THRESHOLD)
       {
         disableCurIPOrFrame = true;
       }
@@ -1178,22 +1178,22 @@ void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopA
     }
   }
 #endif
-#if LMCS3_E1_GATE_AVG_TEMPORAL_TO_AVG_SPATIAL_ACTIVITY_RATIO
+#if HIGH_TEMPORAL_ACTIVE_GATING
   if (!disableCurIPOrFrame)
   {
-    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > LMCS3_E1_METRIC_THRESHOLD && m_sliceReshapeInfo.sliceReshaperEnabled == true);
+    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > HIGH_TEMPORAL_ACTIVE_THRESHOLD && m_sliceReshapeInfo.sliceReshaperEnabled == true);
   }
 #endif
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
   if (!disableCurIPOrFrame)
   {
-    disableCurIPOrFrame = (pic.ratioPicsWithTempAct1 >= LMCS3_F_R1_THRESHOLD && pic.ratioPicsWithTempAct2 >= LMCS3_F_R2_THRESHOLD && pic.picTemporalActYGopAvg >= LMCS3_F_AVG_TEMP_THRESHOLD);
+    disableCurIPOrFrame = (pic.ratioPicsWithTempAct1 >= TEMPORAL_VARIATION_R1_THRESHOLD && pic.ratioPicsWithTempAct2 >= TEMPORAL_VARIATION_R2_THRESHOLD && pic.picTemporalActYGopAvg >= TEMPORAL_VARIATION_AVERAGE_THRESHOLD);
   }
 #endif
-#if LMCS3_G_GATE_SCD
+#if SCENE_CUT_GATING
   if (!disableCurIPOrFrame)
   {
-    disableCurIPOrFrame = pic.numGOPSceneCuts > LMCS3_G_SCD_MIN;
+    disableCurIPOrFrame = pic.numGOPSceneCuts > NUM_SCENE_CUT_THRESHOLD;
   }
 #endif
 

@@ -186,7 +186,7 @@ Picture::Picture()
     , picSpatialActYGopAvg(0.0)
     , isGopActivityAvailable(false)
     , numGOPSceneCuts(0)
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
     , ratioPicsWithTempAct1(0.0)
     , ratioPicsWithTempAct2(0.0)
 #endif

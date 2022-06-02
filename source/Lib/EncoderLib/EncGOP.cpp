@@ -1654,10 +1654,10 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
   {
     double gopTemporalActivityAvg = 0;
     double gopSpatialActivityAvg = 0;
-#if LMCS3_G_GATE_SCD
+#if SCENE_CUT_GATING
     int gopSceneCuts = 0;
 #endif
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
     /* Hold all the pics->temporalAct to be processed at the end*/
     std::vector<double> curGOPTemporalActivity;
     double ratioPicsWithTempAct1 = 0; //Percent Pics with Temporal Activity Greater than 3 * TempActAvg
@@ -1683,7 +1683,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 
       if (gopStart && !gopEnd)
       {
-#if LMCS3_G_GATE_SCD
+#if SCENE_CUT_GATING
         picStat* prevPicStats = NULL;
         Picture* curPic = it->pic;
 
@@ -1708,7 +1708,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 #endif
         gopTemporalActivityAvg += it->picTemporalAct;
         gopSpatialActivityAvg += it->picSpatialAct;
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
         curGOPTemporalActivity.push_back(it->picTemporalAct);
 #endif
         numPicsInGop++;
@@ -1727,7 +1727,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
       gopTemporalActivityAvg /= numPicsInGop;
       gopSpatialActivityAvg /= numPicsInGop;
 
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
       for (auto it = curGOPTemporalActivity.begin(); it != curGOPTemporalActivity.end(); it++)
       {
         double curPicTemporalAct = (*it);
@@ -1751,10 +1751,10 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 		Ipic->isGopActivityAvailable = true;
         Ipic->m_picShared->m_temporalActGopAvg = gopTemporalActivityAvg;
         Ipic->m_picShared->m_spatialActGopAvg = gopSpatialActivityAvg;
-#if LMCS3_G_GATE_SCD
+#if SCENE_CUT_GATING
         Ipic->m_picShared->m_numGOPSceneCuts = gopSceneCuts;
 #endif
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
         Ipic->m_picShared->m_ratioPicsWithTempAct1 = ratioPicsWithTempAct1;
         Ipic->m_picShared->m_ratioPicsWithTempAct2 = ratioPicsWithTempAct2;
 #endif

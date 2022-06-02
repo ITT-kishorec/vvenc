@@ -252,7 +252,7 @@ public:
   double                        picSpatialActYGopAvg;
   bool                          isGopActivityAvailable;
   int                           numGOPSceneCuts;
-#if LMCS3_F_GATE
+#if TEMPORAL_VARIATION_GATING
   double                        ratioPicsWithTempAct1;
   double                        ratioPicsWithTempAct2;
 #endif
