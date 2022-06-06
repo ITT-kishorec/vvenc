@@ -72,7 +72,7 @@ EncReshape::EncReshape()
   , m_binNum        (0)
 #if LMCS_GATING_VALIDATE
   , m_metricChecker         (false)
-#if HIGH_SPATIAL_ACTIVE_GATING
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
   , m_isMetricE2Case        (false)
 #endif
 #endif
@@ -466,7 +466,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
 #if LMCS_GATING_VALIDATE
-#if HIGH_SPATIAL_ACTIVE_GATING
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
     m_isMetricE2Case = false;
 #endif
 #endif
@@ -563,7 +563,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
         m_reshape = false;
 #if LMCS_GATING_VALIDATE
-#if HIGH_SPATIAL_ACTIVE_GATING
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
         m_isMetricE2Case = false;
 #endif
 #endif
@@ -608,8 +608,8 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     {
       parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
 
-#if HIGH_SPATIAL_ACTIVE_GATING
-      if (gopAvgTemporalToAvgSpatialRatio < HIGH_SPATIAL_ACTIVE_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
+      if (gopAvgTemporalToAvgSpatialRatio < TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
       {
         m_isMetricE2Case = true;
         m_sliceReshapeInfo.sliceReshaperEnabled = true;
@@ -729,7 +729,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
 #if LMCS_GATING_VALIDATE
       if (m_metricChecker)
       {
-#if HIGH_SPATIAL_ACTIVE_GATING
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
         if (m_isMetricE2Case)
         {
           m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
@@ -1086,10 +1086,11 @@ void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopA
     disableCurIPOrFrame = pic.picTemporalActYGopAvg > TEMPORAL_ACTIVITY_THRESHOLD;
   }
 #endif
-#if HIGH_TEMPORAL_ACTIVE_GATING
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_HIGH_GATING
   if (!disableCurIPOrFrame)
   {
-    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > HIGH_TEMPORAL_ACTIVE_THRESHOLD && m_sliceReshapeInfo.sliceReshaperEnabled == true);
+    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > TEMPORAL_SPATIAL_ACTIVITY_RATIO_HIGH_GATING_THRESHOLD
+		                   && m_sliceReshapeInfo.sliceReshaperEnabled == true);
   }
 #endif
 #if TEMPORAL_VARIATION_GATING

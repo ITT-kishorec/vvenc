@@ -102,7 +102,7 @@ private:
   int                     m_binNum;
 #if LMCS_GATING_VALIDATE
   bool                    m_metricChecker;
-#if HIGH_SPATIAL_ACTIVE_GATING
+#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
   bool                    m_isMetricE2Case;
 #endif
 #endif
