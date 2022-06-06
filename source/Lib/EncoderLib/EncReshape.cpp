@@ -72,9 +72,6 @@ EncReshape::EncReshape()
   , m_binNum        (0)
 #if LMCS_GATING_VALIDATE
   , m_metricChecker         (false)
-#if SCREEN_CONTENT_GATING
-  , m_isSccLowTemporalCase  (false)
-#endif
 #if HIGH_SPATIAL_ACTIVE_GATING
   , m_isMetricE2Case        (false)
 #endif
@@ -362,10 +359,6 @@ void EncReshape::calcSeqStats(Picture& pic, SeqInfo &stats)
       double varLog10 = log10(variance + 1.0);
       stats.binVar[binIdx] += varLog10;
       binCnt[binIdx]++;
-#if SPATIAL_METRIC_GATING
-      int quantVarIdx = std::min((int)floor(varLog10 * 10), 59);
-      stats.quantVar[binIdx][quantVarIdx] ++;
-#endif
     }
     picY.buf += stride;
   }
@@ -473,9 +466,6 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
 #if LMCS_GATING_VALIDATE
-#if SCREEN_CONTENT_GATING
-    m_isSccLowTemporalCase = false;
-#endif
 #if HIGH_SPATIAL_ACTIVE_GATING
     m_isMetricE2Case = false;
 #endif
@@ -573,9 +563,6 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
         m_reshape = false;
 #if LMCS_GATING_VALIDATE
-#if SCREEN_CONTENT_GATING
-        m_isSccLowTemporalCase = false;
-#endif
 #if HIGH_SPATIAL_ACTIVE_GATING
         m_isMetricE2Case = false;
 #endif
@@ -620,18 +607,6 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     if (m_metricChecker)
     {
       parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
-
-#if SCREEN_CONTENT_GATING
-      if ((m_reshape == true) && pic.isSccStrong && (picTemporalActGopAvg < TEMPORAL_ACTIVITY_THRESHOLD) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
-      {
-        m_isSccLowTemporalCase = true;
-        m_sliceReshapeInfo.sliceReshaperEnabled = true;
-      }
-      else
-      {
-        m_isSccLowTemporalCase = false;
-      }
-#endif
 
 #if HIGH_SPATIAL_ACTIVE_GATING
       if (gopAvgTemporalToAvgSpatialRatio < HIGH_SPATIAL_ACTIVE_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
@@ -754,13 +729,6 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
 #if LMCS_GATING_VALIDATE
       if (m_metricChecker)
       {
-#if SCREEN_CONTENT_GATING
-        if (m_isSccLowTemporalCase)
-        {
-          m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
-        }
-#endif
-
 #if HIGH_SPATIAL_ACTIVE_GATING
         if (m_isMetricE2Case)
         {
@@ -1116,66 +1084,6 @@ void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopA
   if (!disableCurIPOrFrame)
   {
     disableCurIPOrFrame = pic.picTemporalActYGopAvg > TEMPORAL_ACTIVITY_THRESHOLD;
-  }
-#endif
-#if SPATIAL_METRIC_GATING
-  if (!disableCurIPOrFrame)
-  {
-    //Metric 1 - Weighted Variance of Variance
-    double wVarOfVar = 0;
-    for (int i = 1; i < m_binNum - 1; i++)
-    {
-      double meanVar = stats.binVar[i];
-      for (int j = 0; j < 60; j++)
-      {
-        wVarOfVar += pow((double)j / 10 - meanVar, 2) * stats.quantVar[i][j];
-      }
-    }
-    wVarOfVar /= width * height;
-
-    //Metric 2 - numSamples greater than/ equal to 3.0 variance
-    double numSamplesVarGTE3 = 0;
-    for (int i = 1; i < m_binNum - 1; i++)
-    {
-      for (int j = 30; j < 60; j++)
-      {
-        numSamplesVarGTE3 += stats.quantVar[i][j];
-      }
-    }
-    numSamplesVarGTE3 /= width * height;
-
-    //Metric 3 - CW weighted difference
-    double cwWeightedDiff = 0;
-    for (int i = 1; i < m_binNum - 1; i++)
-    {
-      int lowVarSamples = 0;
-      int highVarSamples = 0;
-      for (int j = 0; j < 60; j++)
-      {
-        if (j < 30)
-        {
-          lowVarSamples += stats.quantVar[i][j];
-        }
-        else
-        {
-          highVarSamples += stats.quantVar[i][j];
-        }
-      }
-      cwWeightedDiff += (lowVarSamples - highVarSamples) * (m_binCW[i] - m_initCWAnalyze);
-    }
-    cwWeightedDiff /= width * height;
-
-    if (wVarOfVar < SPATIAL_METRIC_M1_THRESHOLD)
-    {
-      if (numSamplesVarGTE3 > SPATIAL_METRIC_M2_THRESHOLD && cwWeightedDiff < SPATIAL_METRIC_M3_THRESHOLD)
-      {
-        disableCurIPOrFrame = true;
-      }
-    }
-    else
-    {
-      disableCurIPOrFrame = true;
-    }
   }
 #endif
 #if HIGH_TEMPORAL_ACTIVE_GATING

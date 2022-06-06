@@ -63,9 +63,6 @@ struct SeqInfo
   : binVar { 0.0 }
   , binHist { 0.0 }
   , normVar { 0.0 }
-#if SPATIAL_METRIC_GATING
-  , quantVar { 0 }
-#endif
   , nonZeroCnt(0)
   , weightVar ( 0.0 )
   , weightNorm ( 0.0 )
@@ -79,9 +76,6 @@ struct SeqInfo
   double binVar[PIC_ANALYZE_CW_BINS];
   double binHist[PIC_ANALYZE_CW_BINS];
   double normVar[PIC_ANALYZE_CW_BINS];
-#if SPATIAL_METRIC_GATING
-  uint32_t quantVar[PIC_CODE_CW_BINS][60];
-#endif
   int    nonZeroCnt;
   double weightVar;
   double weightNorm;
@@ -108,9 +102,6 @@ private:
   int                     m_binNum;
 #if LMCS_GATING_VALIDATE
   bool                    m_metricChecker;
-#if SCREEN_CONTENT_GATING
-  bool                    m_isSccLowTemporalCase;
-#endif
 #if HIGH_SPATIAL_ACTIVE_GATING
   bool                    m_isMetricE2Case;
 #endif
