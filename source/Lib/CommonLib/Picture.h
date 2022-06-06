@@ -243,7 +243,7 @@ public:
   int                           picInitialQP;
   uint16_t                      picVisActTL0;
   uint16_t                      picVisActY;
-#if RCLOOKAHEAD_RELATED_CHANGES
+#if LMCS_GATING_ENABLE
   uint16_t                        picTemporalActY;
   uint16_t                        picSpatialActY;
 #endif

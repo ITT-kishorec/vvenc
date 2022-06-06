@@ -177,7 +177,7 @@ Picture::Picture()
     , picInitialQP      ( 0 )
     , picVisActTL0      ( 0 )
     , picVisActY        ( 0 )
-#if RCLOOKAHEAD_RELATED_CHANGES
+#if LMCS_GATING_ENABLE
     , picTemporalActY(0)
     , picSpatialActY(0)
 #endif
@@ -377,11 +377,7 @@ void Picture::setSccFlags( const VVEncCfg* encCfg )
   useScTS    = encCfg->m_TS == 1                || ( encCfg->m_TS == 2                && isSccWeak );
   useScBDPCM = encCfg->m_useBDPCM == 1          || ( encCfg->m_useBDPCM == 2          && isSccWeak );
   useScMCTF  = encCfg->m_vvencMCTF.MCTF == 1    || ( encCfg->m_vvencMCTF.MCTF == 2    && ! isSccStrong );
-#if LMCS_CONFIG_PARAM_IN_EASYMODE_AND_LMCS3_EXT
-  useScLMCS  = encCfg->m_lumaReshapeEnable == 1 || ( encCfg->m_lumaReshapeEnable == 2 && ! isSccStrong ) || encCfg->m_lumaReshapeEnable == 3;
-#else
   useScLMCS  = encCfg->m_lumaReshapeEnable == 1 || ( encCfg->m_lumaReshapeEnable == 2 && ! isSccStrong );
-#endif
   useScIBC   = encCfg->m_IBCMode == 1           || ( encCfg->m_IBCMode == 2           && isSccStrong );
   useQtbttSpeedUpMode = encCfg->m_qtbttSpeedUpMode;
 

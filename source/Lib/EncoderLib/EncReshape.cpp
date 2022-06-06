@@ -144,7 +144,7 @@ void  EncReshape::init( const VVEncCfg& encCfg )
     m_chromaWeight = 1.0;
 
 #if LMCS_GATING_VALIDATE
-    m_metricChecker = (encCfg.m_lumaReshapeEnable == 3);
+    m_metricChecker = (encCfg.m_lumaReshapeEnable && encCfg.m_LookAhead);
 #endif
     initLumaLevelToWeightTableReshape();
   }
@@ -457,7 +457,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   m_sliceReshapeInfo.sliceReshaperModelPresent = true;
   m_sliceReshapeInfo.sliceReshaperEnabled = true;
   int modIP = pic.getPOC() - pic.getPOC() / reshapeCW.rspFpsToIp * reshapeCW.rspFpsToIp;
-#if RCLOOKAHEAD_RELATED_CHANGES
+#if LMCS_GATING_ENABLE
   double picTemporalAct = pic.picTemporalActY;
   (void)picTemporalAct;
 #endif

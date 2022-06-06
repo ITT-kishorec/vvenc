@@ -896,7 +896,7 @@ struct XUCache
   TUCache tuCache;
 };
 
-#define LMCS_GATING_ENABLE 0
+#define LMCS_GATING_ENABLE 1
 
 #if LMCS_GATING_ENABLE
 #define LMCS_GATING_VALIDATE 1

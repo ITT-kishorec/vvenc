@@ -1233,10 +1233,10 @@ void EncGOP::xInitPPS(PPS &pps, const SPS &sps) const
   bool bChromaDeltaQPEnabled = false;
   {
     bChromaDeltaQPEnabled = ( m_pcEncCfg->m_sliceChromaQpOffsetIntraOrPeriodic[ 0 ] || m_pcEncCfg->m_sliceChromaQpOffsetIntraOrPeriodic[ 1 ] );
-#if RCLOOKAHEAD_RELATED_CHANGES
-    if (m_pcEncCfg->m_lumaReshapeEnable == 3)
+#if LMCS_GATING_ENABLE
+    if (m_pcEncCfg->m_lumaReshapeEnable)
     {
-      bChromaDeltaQPEnabled |= (m_pcEncCfg->m_usePerceptQPA || m_pcEncCfg->m_sliceChromaQpOffsetPeriodicity > 0) && (m_pcEncCfg->m_internChromaFormat != VVENC_CHROMA_400);
+      bChromaDeltaQPEnabled |= (m_pcEncCfg->m_usePerceptQPA || m_pcEncCfg->m_LookAhead || m_pcEncCfg->m_sliceChromaQpOffsetPeriodicity > 0) && (m_pcEncCfg->m_internChromaFormat != VVENC_CHROMA_400);
     }
     else
 #endif
@@ -2065,16 +2065,6 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   pic.cs->slice = slice;
   pic.cs->allocateVectorsAtPicLevel();
   pic.isReferenced = true;
-
-#if 0//RCLOOKAHEAD_RELATED_CHANGES
-  if (m_pcEncCfg->m_LookAhead)
-  {
-	  const Slice* sliceForAct = pic.slices[0];
-	  pic.picVisActY = BitAllocation::getPicVisualActivity(sliceForAct, m_pcEncCfg);
-	 // pic.picTemporalActY = BitAllocation::getPicTemporalActivity(sliceForAct, m_pcEncCfg);
-	 // pic.picSpatialActY = BitAllocation::getPicSpatialActivity(sliceForAct, m_pcEncCfg);
-  }
-#endif
 
   CHECK(slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing");
   // reshaper
