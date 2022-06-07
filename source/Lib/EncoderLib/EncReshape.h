@@ -46,7 +46,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include "vvenc/vvencCfg.h"
-#include "CommonLib/Picture.h"
 #include "CommonLib/Reshape.h"
 
 //! \ingroup EncoderLib
