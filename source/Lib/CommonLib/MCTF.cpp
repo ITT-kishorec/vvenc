@@ -333,7 +333,6 @@ void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
     for ( int i = dropFramesFront; i < picFifo.size() - dropFramesBack; i++ )
     {
       Picture* curPic = picFifo[ i ];
-
       if ( curPic->poc == m_filterPoc )
       {
         continue;
@@ -362,7 +361,6 @@ void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
         motionEstimationLuma(mv_2, origBuf, srcPic.picBuffer, 16, &mv_1, 2);
 
         motionEstimationLuma(srcPic.mvs, origBuf, srcPic.picBuffer, 8, &mv_2, 1, true);
-
       }
 
       srcPic.index = std::min(3, std::abs(curPic->poc - m_filterPoc) - 1);
@@ -581,7 +579,6 @@ bool MCTF::estimateLumaLn( std::atomic_int& blockX_, std::atomic_int* prevLineX,
         variance = variance + ( pix - avg ) * ( pix - avg );
       }
     }
-
     best.error = ( int ) ( 20 * ( ( best.error + 5.0 ) / ( variance + 5.0 ) ) + ( best.error / ( blockSize * blockSize ) ) / 50 );
 
     mvs.get(blockX / stepSize, blockY / stepSize) = best;
