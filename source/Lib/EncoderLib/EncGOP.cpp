@@ -1607,9 +1607,6 @@ bool EncGOP::xIsSliceTemporalSwitchingPoint( const Slice* slice, const PicList& 
 void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const PicList& picList, bool isEncodeLtRef )
 {
   const size_t size = m_pcEncCfg->m_maxParallelFrames > 0 ? encList.size() : 1;
-#if LMCS_GATING_PARAM_EVALUATE
-  const int intraPeriod = m_pcEncCfg->m_IntraPeriod;
-#endif
   for( int i = 0; i < size; i++ )
   {
     Picture* pic = encList[ i ];
@@ -2057,7 +2054,6 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   pic.cs->allocateVectorsAtPicLevel();
   pic.isReferenced = true;
 
-  CHECK(slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing");
   // reshaper
   xInitLMCS( pic );
 
@@ -2073,7 +2069,7 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
       alfAPS->ccAlfParam.reset();
     }
   }
-  //CHECK( slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing" );
+  CHECK( slice->enableDRAPSEI && m_pcEncCfg->m_maxParallelFrames, "Dependent Random Access Point is not supported by Frame Parallel Processing" );
 
   if( pic.poc == m_pcEncCfg->m_switchPOC )
   {
