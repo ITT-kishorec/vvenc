@@ -70,9 +70,9 @@ EncReshape::EncReshape()
   , m_chromaWeight  (1.0)
   , m_chromaAdj     (0)
   , m_binNum        (0)
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
   , m_metricChecker         (false)
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
   , m_isMetricE2Case        (false)
 #endif
 #endif
@@ -140,7 +140,7 @@ void  EncReshape::init( const VVEncCfg& encCfg )
     m_signalType = encCfg.m_reshapeSignalType;
     m_chromaWeight = 1.0;
 
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
     m_metricChecker = (encCfg.m_lumaReshapeEnable && encCfg.m_LookAhead);
 #endif
     initLumaLevelToWeightTableReshape();
@@ -450,11 +450,11 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
   m_sliceReshapeInfo.sliceReshaperModelPresent = true;
   m_sliceReshapeInfo.sliceReshaperEnabled = true;
   int modIP = pic.getPOC() - pic.getPOC() / reshapeCW.rspFpsToIp * reshapeCW.rspFpsToIp;
-#if LMCS_GATING_ENABLE
+#if LMCS_ENABLE_CONTROL
   double picTemporalAct = pic.picTemporalActY;
   (void)picTemporalAct;
 #endif
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   double picTemporalActGopAvg = pic.picTemporalActYGopAvg;
   double picSpatialActGopAvg = pic.picSpatialActYGopAvg;
   double gopAvgTemporalToAvgSpatialRatio = picTemporalActGopAvg / picSpatialActGopAvg;
@@ -465,8 +465,8 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
 
   if (sliceType == VVENC_I_SLICE || (reshapeCW.updateCtrl == 2 && modIP == 0))
   {
-#if LMCS_GATING_VALIDATE
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
+#if LMCS_CONTROL_VALIDATE
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
     m_isMetricE2Case = false;
 #endif
 #endif
@@ -562,8 +562,8 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       {
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
         m_reshape = false;
-#if LMCS_GATING_VALIDATE
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
+#if LMCS_CONTROL_VALIDATE
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
         m_isMetricE2Case = false;
 #endif
 #endif
@@ -603,13 +603,13 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     }
     m_chromaAdj = m_sliceReshapeInfo.enableChromaAdj;
 
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
     if (m_metricChecker)
     {
       parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
 
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
-      if (gopAvgTemporalToAvgSpatialRatio < TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
+      if (gopAvgTemporalToAvgSpatialRatio < LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
       {
         m_isMetricE2Case = true;
         m_sliceReshapeInfo.sliceReshaperEnabled = true;
@@ -726,17 +726,17 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
         }
       }
 
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
       if (m_metricChecker)
       {
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
         if (m_isMetricE2Case)
         {
           m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
         }
 #endif
 
-#if TID0_PIC_GATING
+#if LMCS_TID0_PIC_CONTROL
         if (pic.cs->slice->TLayer == 0)
         {
           calcSeqStats(pic, m_srcSeqStats);
@@ -1073,33 +1073,33 @@ void EncReshape::deriveReshapeParametersSDR(bool *intraAdp, bool *interAdp)
   }
 }
 
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
 void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod)
 {
   const int width = pic.getOrigBuf(COMP_Y).width;
   const int height = pic.getOrigBuf(COMP_Y).height;
   bool disableCurIPOrFrame = false;
 
-#if TEMPORAL_ACTIVITY_GATING
+#if LMCS_TEMPORAL_ACTIVITY_CONTROL
   if (!disableCurIPOrFrame)
   {
     disableCurIPOrFrame = pic.picTemporalActYGopAvg > TEMPORAL_ACTIVITY_THRESHOLD;
   }
 #endif
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_HIGH_GATING
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_HIGH_CONTROL
   if (!disableCurIPOrFrame)
   {
-    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > TEMPORAL_SPATIAL_ACTIVITY_RATIO_HIGH_GATING_THRESHOLD
+    disableCurIPOrFrame = (gopAvgTemporalToAvgSpatialRatio > LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_HIGH_CONTROL_THRESHOLD
 		                   && m_sliceReshapeInfo.sliceReshaperEnabled == true);
   }
 #endif
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
   if (!disableCurIPOrFrame)
   {
     disableCurIPOrFrame = (pic.ratioPicsWithTempAct1 >= TEMPORAL_VARIATION_R1_THRESHOLD && pic.ratioPicsWithTempAct2 >= TEMPORAL_VARIATION_R2_THRESHOLD && pic.picTemporalActYGopAvg >= TEMPORAL_VARIATION_AVERAGE_THRESHOLD);
   }
 #endif
-#if SCENE_CUT_GATING
+#if LMCS_SCENE_CUT_CONTROL
   if (!disableCurIPOrFrame)
   {
     disableCurIPOrFrame = pic.numGOPSceneCuts > NUM_SCENE_CUT_THRESHOLD;

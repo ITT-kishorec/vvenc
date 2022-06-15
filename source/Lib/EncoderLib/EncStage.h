@@ -61,11 +61,11 @@ public:
   PicShared()
   : m_isSccWeak  ( false )
   , m_isSccStrong( false )
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   , m_temporalActGopAvg ( 0.0 )
   , m_spatialActGopAvg  ( 0.0 )
   , m_numGOPSceneCuts   ( 0 )
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
   , m_ratioPicsWithTempAct1 ( 0.0 )
   , m_ratioPicsWithTempAct2 ( 0.0 )
 #endif
@@ -118,11 +118,11 @@ public:
     m_isLead      = poc < 0;
     m_isTrail     = m_maxFrames > 0 && poc >= m_maxFrames;
     m_ctsValid    = yuvInBuf->ctsValid;
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
     m_temporalActGopAvg = 0;
     m_spatialActGopAvg = 0;
     m_numGOPSceneCuts = 0;
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
     m_ratioPicsWithTempAct1 = 0;
     m_ratioPicsWithTempAct2 = 0;
 #endif
@@ -144,11 +144,11 @@ public:
     pic->poc         = m_poc;
     pic->cts         = m_cts;
     pic->ctsValid    = m_ctsValid;
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
     pic->picTemporalActYGopAvg = m_temporalActGopAvg;
     pic->picSpatialActYGopAvg = m_spatialActGopAvg;
     pic->numGOPSceneCuts = m_numGOPSceneCuts;
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
     pic->ratioPicsWithTempAct1 = m_ratioPicsWithTempAct1;
     pic->ratioPicsWithTempAct2 = m_ratioPicsWithTempAct2;
 #endif
@@ -194,11 +194,11 @@ public:
   PicShared* m_prevShared[ NUM_PREV_FRAMES ];
   bool       m_isSccWeak;
   bool       m_isSccStrong;
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   double     m_temporalActGopAvg;
   double     m_spatialActGopAvg;
   int        m_numGOPSceneCuts;
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
   double     m_ratioPicsWithTempAct1;
   double     m_ratioPicsWithTempAct2;
 #endif

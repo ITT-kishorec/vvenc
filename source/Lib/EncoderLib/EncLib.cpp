@@ -191,7 +191,7 @@ void EncLib::initPass( int pass, const char* statsFName )
   // reset
   xUninitLib();
 
-#if LMCS_GATING_ENABLE
+#if LMCS_ENABLE_CONTROL
   if (m_encCfg.m_lumaReshapeEnable && m_encCfg.m_LookAhead)
   {
     if (m_encCfg.m_RCNumPasses > 1)

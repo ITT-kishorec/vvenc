@@ -178,7 +178,7 @@ private:
   std::vector<int>          m_globalCtuQpVector;
 
   bool                      m_trySkipOrDecodePicture;
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   std::vector<picStat>      m_gopTemporalActivity;
   int                       m_numGOPStatsProcessed;
 #endif

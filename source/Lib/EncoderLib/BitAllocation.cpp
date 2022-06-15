@@ -672,7 +672,7 @@ double BitAllocation::getPicVisualActivity (const Slice* slice, const VVEncCfg* 
 
   if (nullptr == origPrev)
   {
-#if LMCS_GATING_ENABLE
+#if LMCS_ENABLE_CONTROL
 	  return filterAndCalculateAverageActivity(picOrig.buf, picOrig.stride, picOrig.height, picOrig.width,
 		  picPrv1.buf, picPrv1.stride, picPrv2.buf, picPrv2.stride,
 		  (origPrev != nullptr ? 24 : encCfg->m_FrameRate / encCfg->m_FrameScale),

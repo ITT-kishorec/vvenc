@@ -177,16 +177,16 @@ Picture::Picture()
     , picInitialQP      ( 0 )
     , picVisActTL0      ( 0 )
     , picVisActY        ( 0 )
-#if LMCS_GATING_ENABLE
+#if LMCS_ENABLE_CONTROL
     , picTemporalActY(0)
     , picSpatialActY(0)
 #endif
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
     , picTemporalActYGopAvg(0.0)
     , picSpatialActYGopAvg(0.0)
     , isGopActivityAvailable(false)
     , numGOPSceneCuts(0)
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
     , ratioPicsWithTempAct1(0.0)
     , ratioPicsWithTempAct2(0.0)
 #endif

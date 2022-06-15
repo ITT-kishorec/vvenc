@@ -99,9 +99,9 @@ private:
   double                  m_chromaWeight;
   int                     m_chromaAdj;
   int                     m_binNum;
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
   bool                    m_metricChecker;
-#if TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_GATING
+#if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
   bool                    m_isMetricE2Case;
 #endif
 #endif
@@ -122,7 +122,7 @@ public:
   void cwPerturbation   ( int startBinIdx, int endBinIdx, uint16_t maxCW);
   void cwReduction      ( int startBinIdx, int endBinIdx);
   void deriveReshapeParametersSDR ( bool *intraAdp, bool *interAdp);
-#if LMCS_GATING_VALIDATE
+#if LMCS_CONTROL_VALIDATE
   void parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod);
 #endif
   void deriveReshapeParameters    ( double *array, int start, int end, vvencReshapeCW respCW, double &alpha, double &beta);

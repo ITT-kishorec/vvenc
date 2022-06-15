@@ -84,7 +84,7 @@ struct StopClock
   std::chrono::steady_clock::duration   m_timer;
 };
 
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
 struct picStat {
   int     pocId;
   int     tId;
@@ -243,16 +243,16 @@ public:
   int                           picInitialQP;
   uint16_t                      picVisActTL0;
   uint16_t                      picVisActY;
-#if LMCS_GATING_ENABLE
+#if LMCS_ENABLE_CONTROL
   uint16_t                        picTemporalActY;
   uint16_t                        picSpatialActY;
 #endif
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   double                        picTemporalActYGopAvg;
   double                        picSpatialActYGopAvg;
   bool                          isGopActivityAvailable;
   int                           numGOPSceneCuts;
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
   double                        ratioPicsWithTempAct1;
   double                        ratioPicsWithTempAct2;
 #endif

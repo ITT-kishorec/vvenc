@@ -298,7 +298,7 @@ void EncGOP::init( const VVEncCfg& encCfg, RateCtrl& rateCtrl, NoMallocThreadPoo
   m_pcRateCtrl    = &rateCtrl;
   m_threadPool    = threadPool;
   m_isPreAnalysis = isPreAnalysis;
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   m_numGOPStatsProcessed = 0;
 #endif 
 
@@ -1616,7 +1616,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 
       xInitFirstSlice( *pic, picList, isEncodeLtRef );
 
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
       picStat curPicStat;
       curPicStat.pocId = pic->poc;
       curPicStat.tId = pic->TLayer;
@@ -1629,7 +1629,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
       m_gopTemporalActivity.push_back(curPicStat);
 #endif
       pic->encTime.stopTimer();
-#if !LMCS_GATING_PARAM_EVALUATE
+#if !LMCS_CONTROL_PARAM_EVALUATE
       m_gopEncListInput.push_back( pic );
       m_gopEncListOutput.push_back( pic );
 #endif
@@ -1637,15 +1637,15 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
     }
   }
 
-#if LMCS_GATING_PARAM_EVALUATE
+#if LMCS_CONTROL_PARAM_EVALUATE
   if (m_isPreAnalysis)
   {
     double gopTemporalActivityAvg = 0;
     double gopSpatialActivityAvg = 0;
-#if SCENE_CUT_GATING
+#if LMCS_SCENE_CUT_CONTROL
     int gopSceneCuts = 0;
 #endif
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
     /* Hold all the pics->temporalAct to be processed at the end*/
     std::vector<double> curGOPTemporalActivity;
     double ratioPicsWithTempAct1 = 0; //Percent Pics with Temporal Activity Greater than 3 * TempActAvg
@@ -1671,7 +1671,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 
       if (gopStart && !gopEnd)
       {
-#if SCENE_CUT_GATING
+#if LMCS_SCENE_CUT_CONTROL
         picStat* prevPicStats = NULL;
         Picture* curPic = it->pic;
 
@@ -1696,7 +1696,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 #endif
         gopTemporalActivityAvg += it->picTemporalAct;
         gopSpatialActivityAvg += it->picSpatialAct;
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
         curGOPTemporalActivity.push_back(it->picTemporalAct);
 #endif
         numPicsInGop++;
@@ -1715,7 +1715,7 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
       gopTemporalActivityAvg /= numPicsInGop;
       gopSpatialActivityAvg /= numPicsInGop;
 
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
       for (auto it = curGOPTemporalActivity.begin(); it != curGOPTemporalActivity.end(); it++)
       {
         double curPicTemporalAct = (*it);
@@ -1739,10 +1739,10 @@ void EncGOP::xInitPicsInCodingOrder( const std::vector<Picture*>& encList, const
 		Ipic->isGopActivityAvailable = true;
         Ipic->m_picShared->m_temporalActGopAvg = gopTemporalActivityAvg;
         Ipic->m_picShared->m_spatialActGopAvg = gopSpatialActivityAvg;
-#if SCENE_CUT_GATING
+#if LMCS_SCENE_CUT_CONTROL
         Ipic->m_picShared->m_numGOPSceneCuts = gopSceneCuts;
 #endif
-#if TEMPORAL_VARIATION_GATING
+#if LMCS_TEMPORAL_VARIATION_CONTROL
         Ipic->m_picShared->m_ratioPicsWithTempAct1 = ratioPicsWithTempAct1;
         Ipic->m_picShared->m_ratioPicsWithTempAct2 = ratioPicsWithTempAct2;
 #endif
@@ -2077,7 +2077,7 @@ void EncGOP::xInitFirstSlice( Picture& pic, const PicList& picList, bool isEncod
   }
   pic.seqBaseQp = m_pcEncCfg->m_QP + m_appliedSwitchDQQ;
 
-#if !LMCS_GATING_PARAM_EVALUATE
+#if !LMCS_CONTROL_PARAM_EVALUATE
   pic.isInitDone = true;
 
   m_bFirstInit = false;
