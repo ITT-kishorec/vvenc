@@ -140,7 +140,7 @@ void  EncReshape::init( const VVEncCfg& encCfg )
     m_signalType = encCfg.m_reshapeSignalType;
     m_chromaWeight = 1.0;
 
-#if LMCS_CONTROL_VALIDATE
+#if LMCS_CONTROL_VALIDATE // LMCS control algorithm enable
     m_metricChecker = (encCfg.m_lumaReshapeEnable && encCfg.m_LookAhead);
 #endif
     initLumaLevelToWeightTableReshape();
@@ -603,7 +603,7 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     }
     m_chromaAdj = m_sliceReshapeInfo.enableChromaAdj;
 
-#if LMCS_CONTROL_VALIDATE
+#if LMCS_CONTROL_VALIDATE  // LMCS control validation of parameters
     if (m_metricChecker)
     {
       parseLMCSDisableGates(pic, m_srcSeqStats, gopAvgTemporalToAvgSpatialRatio, true);
@@ -1073,7 +1073,7 @@ void EncReshape::deriveReshapeParametersSDR(bool *intraAdp, bool *interAdp)
   }
 }
 
-#if LMCS_CONTROL_VALIDATE
+#if LMCS_CONTROL_VALIDATE // Disable algorithm based on various metrices
 void EncReshape::parseLMCSDisableGates(Picture& pic, SeqInfo &stats, double gopAvgTemporalToAvgSpatialRatio, bool disableIntraPeriod)
 {
   const int width = pic.getOrigBuf(COMP_Y).width;

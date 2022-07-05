@@ -134,6 +134,7 @@ static double filterAndCalculateAverageActivity (const Pel* pSrc, const int iSrc
     meanAct = double (saAct) / double ((width - 2) * (height - 2));
   }
 
+  //Update the frame level Spatial activity
   if (nullptr != picSpatialActY)
   {
 	  *picSpatialActY = meanAct;
@@ -230,6 +231,7 @@ static double filterAndCalculateAverageActivity (const Pel* pSrc, const int iSrc
     meanAct += (2.0 * taAct) / double ((width - 2) * (height - 2));
   }
 
+  //Update the frame level Temporal activity
   if (nullptr != picTemporalActY)
   {
 	  *picTemporalActY = meanAct- (*picSpatialActY);
@@ -670,7 +672,7 @@ double BitAllocation::getPicVisualActivity (const Slice* slice, const VVEncCfg* 
   const CPelBuf picPrv1 = (origPrev != nullptr ? *origPrev : pic->getOrigBufPrev (COMP_Y, PREV_FRAME_1));
   const CPelBuf picPrv2 = pic->getOrigBufPrev (COMP_Y, PREV_FRAME_2);
 
-  if (nullptr == origPrev)
+  if (nullptr == origPrev) // activity update path for all pictures
   {
 #if LMCS_ENABLE_CONTROL
 	  return filterAndCalculateAverageActivity(picOrig.buf, picOrig.stride, picOrig.height, picOrig.width,
@@ -686,7 +688,7 @@ double BitAllocation::getPicVisualActivity (const Slice* slice, const VVEncCfg* 
 		  nullptr, nullptr);
 #endif
   }
-  else
+  else // activity update disabled for TID_0 pictures
   {
 	  return filterAndCalculateAverageActivity(picOrig.buf, picOrig.stride, picOrig.height, picOrig.width,
 		  picPrv1.buf, picPrv1.stride, picPrv2.buf, picPrv2.stride,
