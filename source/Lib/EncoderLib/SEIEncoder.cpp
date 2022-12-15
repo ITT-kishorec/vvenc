@@ -527,6 +527,138 @@ void SEIEncoder::initSEIContentLightLevel(SEIContentLightLevelInfo *seiCLL)
   seiCLL->maxPicAverageLightLevel = m_pcEncCfg->m_contentLightLevel[1];
 }
 
+#ifdef VVENC_FEATURE_FGS
+std::string SEIEncoder::stringSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics* seiFGS)
+{
+  std::ostringstream oss;
+  oss<<"\nSEI FGC Message:################################\n";
+  oss<<"SEI Message Code              :"<<seiFGS->payloadType()<<"\n";
+  oss<<"SEIFGCCancelFlag              :"<<seiFGS->filmGrainCharacteristicsCancelFlag     <<"\n";
+  oss<<"SEIFGCModelID                 :"<<(int)seiFGS->filmGrainModelId                       <<"\n";
+  oss<<"SEI Separate Color Description? "<<(seiFGS->separateColourDescriptionPresent?"Yes":"No")<<"\n";
+  if(seiFGS->separateColourDescriptionPresent){
+  oss<<"\nFGS Color Description:##########################\n";
+  oss<<"SEIFGCBitDepthLumaMinus8      :"<<(int)seiFGS->filmGrainBitDepthLumaMinus8            <<"\n";
+  oss<<"SEIFGCBitDepthChromaMinus8    :"<<(int)seiFGS->filmGrainBitDepthChromaMinus8          <<"\n";
+  oss<<"SEIFGCFullRangeFlag           :"<<seiFGS->filmGrainFullRangeFlag                 <<"\n";
+  oss<<"SEIFGCColourPrimaries         :"<<(int)seiFGS->filmGrainColourPrimaries               <<"\n";
+  oss<<"SEIFGCTransferCharacteristics :"<<(int)seiFGS->filmGrainTransferCharacteristics       <<"\n";
+  oss<<"SEIFGCMatrixCoeffs            :"<<(int)seiFGS->filmGrainMatrixCoeffs                  <<"\n";
+  oss<<"#################################################\n\n";
+  }
+  oss<<"SEIFGCBlendingModeID          :"<<(int)seiFGS->blendingModeId                         <<"\n";
+  oss<<"SEIFGCLog2ScaleFactor         :"<<(int)seiFGS->log2ScaleFactor                        <<"\n";
+  oss<<"SEIFGCPersistenceFlag         :"<<(int)seiFGS->filmGrainCharacteristicsPersistenceFlag<<"\n";
+  for(int c = 0; c < 3; c++)
+  {
+    
+    oss<<"Component "<<c<<":\n";
+    oss<<"\tPresent?\t"<<(seiFGS->compModel[c].presentFlag?"Yes":"No")<<"\n";
+    oss<<"\tNumModelValues:\t"<<(int)seiFGS->compModel[c].numModelValues<<"\n";
+    for(int i = 0; i < seiFGS->compModel[c].intensityValues.size(); i++)
+    {
+      oss<<"\t\tIntensity Interval "<<i<<":\t["<<
+      (int)seiFGS->compModel[c].intensityValues[i].intensityIntervalLowerBound<<","<<(int)seiFGS->compModel[c].intensityValues[i].intensityIntervalUpperBound<<"]\n";
+      oss<<"\t\tCompModelValues:\t";
+      for(int j = 0; j < seiFGS->compModel[c].intensityValues[i].compModelValue.size(); j++)
+      {
+        if(j == seiFGS->compModel[c].intensityValues[i].compModelValue.size() - 1)
+        {
+          oss<<seiFGS->compModel[c].intensityValues[i].compModelValue[j];
+        }
+        else
+        {
+          oss<<seiFGS->compModel[c].intensityValues[i].compModelValue[j]<<",";
+        }
+      }
+      oss<<"\n";
+
+    }
+  }
+  oss<<"################################################\n\n";
+  return oss.str();
+}
+uint8_t toInt(uint8_t num)
+{
+  if(num >= 48)
+    return num - 48;
+  else return num;
+}
+void SEIEncoder::initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics *seiFGS)
+{
+  CHECK(!(m_isInitialized), "Unspecified error");
+  CHECK(!(seiFGS != NULL), "Unspecified error");
+
+  //  Set SEI message parameters read from command line options
+  seiFGS->filmGrainCharacteristicsCancelFlag      = m_pcEncCfg->m_filmGrainCharacteristicsCancelFlag;
+  seiFGS->filmGrainModelId                        = (m_pcEncCfg->m_filmGrainModelId);
+  seiFGS->separateColourDescriptionPresent        = m_pcEncCfg->m_separateColourDescriptionPresent;
+  seiFGS->filmGrainBitDepthLumaMinus8             = (m_pcEncCfg->m_filmGrainBitDepthLumaMinus8);
+  seiFGS->filmGrainBitDepthChromaMinus8           = (m_pcEncCfg->m_filmGrainBitDepthChromaMinus8);
+  seiFGS->filmGrainFullRangeFlag                  = (m_pcEncCfg->m_filmGrainFullRangeFlag);
+  seiFGS->filmGrainColourPrimaries                = (m_pcEncCfg->m_filmGrainColourPrimaries);
+  seiFGS->filmGrainTransferCharacteristics        = (m_pcEncCfg->m_filmGrainTransferCharacteristics);
+  seiFGS->filmGrainMatrixCoeffs                   = (m_pcEncCfg->m_filmGrainMatrixCoeffs);
+  seiFGS->blendingModeId                          = (m_pcEncCfg->m_blendingModeId);
+  seiFGS->log2ScaleFactor                         = (m_pcEncCfg->m_log2ScaleFactor);    
+  seiFGS->filmGrainCharacteristicsPersistenceFlag = (m_pcEncCfg->m_filmGrainCharacteristicsPersistenceFlag);
+
+  seiFGS->compModel[0].presentFlag                = m_pcEncCfg->m_compModelPresentFlagComp0;
+  seiFGS->compModel[0].numModelValues             = m_pcEncCfg->m_numModelValuesMinus1Comp0 + 1;
+  seiFGS->compModel[0].intensityValues.resize(m_pcEncCfg->m_numIntensityIntervalsMinus1Comp0 + 1);
+
+  seiFGS->compModel[1].presentFlag                = m_pcEncCfg->m_compModelPresentFlagComp1;
+  seiFGS->compModel[1].numModelValues             = m_pcEncCfg->m_numModelValuesMinus1Comp1 + 1;
+  seiFGS->compModel[1].intensityValues.resize(m_pcEncCfg->m_numIntensityIntervalsMinus1Comp1 + 1);
+
+  seiFGS->compModel[2].presentFlag                = m_pcEncCfg->m_compModelPresentFlagComp2;
+  seiFGS->compModel[2].numModelValues             = m_pcEncCfg->m_numModelValuesMinus1Comp2 + 1;
+  seiFGS->compModel[2].intensityValues.resize(m_pcEncCfg->m_numIntensityIntervalsMinus1Comp2 + 1);
+
+  for(int i = 0; i < seiFGS->compModel[0].intensityValues.size(); i++)
+  {
+    seiFGS->compModel[0].intensityValues[i].intensityIntervalLowerBound = m_pcEncCfg->m_intensityIntervalsLowerBoundsComp0[i];
+    seiFGS->compModel[0].intensityValues[i].intensityIntervalUpperBound = m_pcEncCfg->m_intensityIntervalsUpperBoundsComp0[i];
+  }
+
+  for(int i = 0; i < seiFGS->compModel[1].intensityValues.size(); i++)
+  {
+    seiFGS->compModel[1].intensityValues[i].intensityIntervalLowerBound = m_pcEncCfg->m_intensityIntervalsLowerBoundsComp1[i];
+    seiFGS->compModel[1].intensityValues[i].intensityIntervalUpperBound = m_pcEncCfg->m_intensityIntervalsUpperBoundsComp1[i];
+  }
+
+  for(int i = 0; i < seiFGS->compModel[2].intensityValues.size(); i++)
+  {
+    seiFGS->compModel[2].intensityValues[i].intensityIntervalLowerBound = m_pcEncCfg->m_intensityIntervalsLowerBoundsComp2[i];
+    seiFGS->compModel[2].intensityValues[i].intensityIntervalUpperBound = m_pcEncCfg->m_intensityIntervalsUpperBoundsComp2[i];
+  }
+
+  for(int c = 0; c < VVENC_MAX_NUM_COMP ; c++)
+  {
+    for(int i = 0; i < seiFGS->compModel[c].intensityValues.size(); i++)
+    {
+      seiFGS->compModel[c].intensityValues[i].compModelValue.resize(seiFGS->compModel[c].numModelValues);
+
+      for(int j = 0; j < seiFGS->compModel[c].intensityValues[i].compModelValue.size(); j++)
+      {
+        seiFGS->compModel[c].intensityValues[i].compModelValue[j] = m_pcEncCfg->xGetFGCSEIModelValue(c,i,j);
+      }
+    }
+  }
+  //printSEIFilmGrainCharacteristics(seiFGS);
+  //delete[] m_pcEncCfg->m_intensityIntervalsLowerBoundsComp0;
+  //delete[] m_pcEncCfg->m_intensityIntervalsLowerBoundsComp1;
+  //delete[] m_pcEncCfg->m_intensityIntervalsLowerBoundsComp2;
+
+  //delete[] m_pcEncCfg->m_intensityIntervalsUpperBoundsComp0;
+  //delete[] m_pcEncCfg->m_intensityIntervalsUpperBoundsComp1;
+  //delete[] m_pcEncCfg->m_intensityIntervalsUpperBoundsComp2;
+
+  //delete[] m_pcEncCfg->m_compModelValuesComp0;
+  //delete[] m_pcEncCfg->m_compModelValuesComp1;
+  //delete[] m_pcEncCfg->m_compModelValuesComp2;
+}
+#endif
 
 } // namespace vvenc
 

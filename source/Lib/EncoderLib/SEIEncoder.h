@@ -83,6 +83,11 @@ public:
   void initSEIAlternativeTransferCharacteristics(SEIAlternativeTransferCharacteristics *seiAltTransCharacteristics);
   void initSEIMasteringDisplayColourVolume(SEIMasteringDisplayColourVolume *seiMDCV);
   void initSEIContentLightLevel(SEIContentLightLevelInfo *seiCLL);
+  
+#ifdef VVENC_FEATURE_FGS
+  void initSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics* seiFGS);
+  std::string stringSEIFilmGrainCharacteristics(SEIFilmGrainCharacteristics* seiFGS);
+#endif
 
 private:
   const VVEncCfg* m_pcEncCfg;

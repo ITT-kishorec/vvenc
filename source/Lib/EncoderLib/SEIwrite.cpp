@@ -822,9 +822,11 @@ void SEIWriter::xWriteSEIUserDataRegistered(const SEIUserDataRegistered &sei)
 
 void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacteristics &sei)
 {
+  
   WRITE_FLAG(sei.filmGrainCharacteristicsCancelFlag, "fg_characteristics_cancel_flag");
   if (!sei.filmGrainCharacteristicsCancelFlag)
   {
+    
     WRITE_CODE(sei.filmGrainModelId, 2, "fg_model_id");
     WRITE_FLAG(sei.separateColourDescriptionPresent, "separate_colour_description_present_flag");
     if (sei.separateColourDescriptionPresent)
@@ -836,6 +838,7 @@ void SEIWriter::xWriteSEIFilmGrainCharacteristics(const SEIFilmGrainCharacterist
       WRITE_CODE(sei.filmGrainTransferCharacteristics, 8, "fg_transfer_characteristics");
       WRITE_CODE(sei.filmGrainMatrixCoeffs, 8, "fg_matrix_coeffs");
     }
+    
     WRITE_CODE(sei.blendingModeId, 2, "fg_blending_mode_id");
     WRITE_CODE(sei.log2ScaleFactor, 4, "fg_log2_scale_factor");
     for (int c = 0; c<3; c++)

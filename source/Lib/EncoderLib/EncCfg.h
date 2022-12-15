@@ -57,9 +57,41 @@ struct VVEncCfg : public vvenc_config
   VVEncCfg& operator= ( const vvenc_config& extern_cfg );
 
   bool m_stageParallelProc;
+  #ifdef VVENC_FEATURE_FGS
+  public:
+
+  int  xGetFGCSEIModelValue(int compNumber, int intensityIntervalNumber, int modelNumber) const
+  {
+    const std::vector<int>* cmv;
+
+    int rowSize;
+    int rowNumber = intensityIntervalNumber;
+    int columnNumber = modelNumber;
+    
+    if(compNumber == 0)
+    {
+      cmv = &(m_compModelValuesComp0);
+      rowSize = cmv->size()/(m_numIntensityIntervalsMinus1Comp0+1);
+    } 
+    if(compNumber == 1)
+    {
+      cmv = &(m_compModelValuesComp1);
+      rowSize = cmv->size()/(m_numIntensityIntervalsMinus1Comp1+1);
+    }
+    if(compNumber == 2)
+    {
+      cmv = &(m_compModelValuesComp2);
+      rowSize = cmv->size()/(m_numIntensityIntervalsMinus1Comp2+1);
+    }
+    
+    return (*cmv)[rowNumber * rowSize + columnNumber];
+  }
+#endif
+
 
 private:
   void xInitCfgMembers();
+  
 };
 
 

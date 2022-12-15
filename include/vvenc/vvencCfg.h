@@ -51,6 +51,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef __cplusplus
+#include <vector>
+#endif
 
 #define VVENC_NAMESPACE_BEGIN
 #define VVENC_NAMESPACE_END
@@ -537,6 +540,63 @@ typedef struct vvenc_config
   bool                m_bufferingPeriodSEIEnabled;
   bool                m_pictureTimingSEIEnabled;
   bool                m_decodingUnitInfoSEIEnabled;
+
+#ifdef VVENC_FEATURE_FGS
+  //SEI Film Grain Characteristics Flags
+  bool      m_filmGrainSEIEnabled;
+  bool      m_fgcSEIPerPictureSEI;
+  bool      m_filmGrainCharacteristicsCancelFlag;
+  int   m_filmGrainModelId;
+  bool      m_separateColourDescriptionPresent;
+  int   m_filmGrainBitDepthLumaMinus8;
+  int   m_filmGrainBitDepthChromaMinus8;
+  bool      m_filmGrainFullRangeFlag;
+  int   m_filmGrainColourPrimaries;
+  int   m_filmGrainTransferCharacteristics;
+  int   m_filmGrainMatrixCoeffs;
+  int   m_blendingModeId;
+  int   m_log2ScaleFactor;
+  int   m_filmGrainCharacteristicsPersistenceFlag;
+
+  int       m_compModelPresentFlagComp0;
+  int       m_compModelPresentFlagComp1;
+  int       m_compModelPresentFlagComp2;
+
+  int       m_numIntensityIntervalsMinus1Comp0;
+  int       m_numIntensityIntervalsMinus1Comp1;
+  int       m_numIntensityIntervalsMinus1Comp2;
+
+  int       m_numModelValuesMinus1Comp0;
+  int       m_numModelValuesMinus1Comp1;
+  int       m_numModelValuesMinus1Comp2;
+  
+#ifdef __cplusplus
+  std::vector<int> m_intensityIntervalsLowerBoundsComp0; 
+  std::vector<int> m_intensityIntervalsLowerBoundsComp1; 
+  std::vector<int> m_intensityIntervalsLowerBoundsComp2; 
+
+  std::vector<int> m_intensityIntervalsUpperBoundsComp0;
+  std::vector<int> m_intensityIntervalsUpperBoundsComp1;
+  std::vector<int> m_intensityIntervalsUpperBoundsComp2;
+
+  std::vector<int> m_compModelValuesComp0;
+  std::vector<int> m_compModelValuesComp1;
+  std::vector<int> m_compModelValuesComp2;
+#endif
+
+  int* m_intensityIntervalsLowerBoundsComp0_arr; 
+  int* m_intensityIntervalsLowerBoundsComp1_arr; 
+  int* m_intensityIntervalsLowerBoundsComp2_arr; 
+
+  int* m_intensityIntervalsUpperBoundsComp0_arr;
+  int* m_intensityIntervalsUpperBoundsComp1_arr;
+  int* m_intensityIntervalsUpperBoundsComp2_arr;
+
+  int* m_compModelValuesComp0_arr;
+  int* m_compModelValuesComp1_arr;
+  int* m_compModelValuesComp2_arr;
+  
+#endif
 
   bool                m_entropyCodingSyncEnabled;
   bool                m_entryPointsPresent;

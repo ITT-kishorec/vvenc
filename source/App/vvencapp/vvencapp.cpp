@@ -207,7 +207,11 @@ int main( int argc, char* argv[] )
   vvenc_set_logging_callback( nullptr, msgFnc ); // register global log callback ( deprecated, will be removed)
 
   // default encoder configuration
+#ifdef VVENC_FEATURE_FGS
+  apputils::VVEncAppCfg vvencappCfg = apputils::VVEncAppCfg(true);
+#else
   apputils::VVEncAppCfg vvencappCfg = apputils::VVEncAppCfg(true); // init config in easy mode
+#endif
   vvencappCfg.setPresetChangeCallback(changePreset);
   vvenc_config vvenccfg;
   vvenc_init_default( &vvenccfg, 1920, 1080, 60, 0, 32, vvencPresetMode::VVENC_MEDIUM );

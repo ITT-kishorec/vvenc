@@ -2479,7 +2479,30 @@ void EncGOP::xWriteLeadingSEIs( const Picture& pic, AccessUnitList& accessUnit )
     m_seiEncoder.initSEIMasteringDisplayColourVolume(sei);
     leadingSeiMessages.push_back(sei);
   }
+#ifdef VVENC_FEATURE_FGS
+  if(m_pcEncCfg->m_filmGrainSEIEnabled)
+  {
+    SEIFilmGrainCharacteristics* sei = new SEIFilmGrainCharacteristics;
+    m_seiEncoder.initSEIFilmGrainCharacteristics(sei);
+    msg.log(VVENC_INFO,m_seiEncoder.stringSEIFilmGrainCharacteristics(sei).c_str());
+    leadingSeiMessages.push_back(sei);
+    
+  }
+  else
+  {
+   /* delete[] m_pcEncCfg->m_intensityIntervalsLowerBoundsComp0;
+    delete[] m_pcEncCfg->m_intensityIntervalsLowerBoundsComp1;
+    delete[] m_pcEncCfg->m_intensityIntervalsLowerBoundsComp2;
 
+    delete[] m_pcEncCfg->m_intensityIntervalsUpperBoundsComp0;
+    delete[] m_pcEncCfg->m_intensityIntervalsUpperBoundsComp1;
+    delete[] m_pcEncCfg->m_intensityIntervalsUpperBoundsComp2;
+
+    delete[] m_pcEncCfg->m_compModelValuesComp0;
+    delete[] m_pcEncCfg->m_compModelValuesComp1;
+    delete[] m_pcEncCfg->m_compModelValuesComp2;*/
+  }
+#endif
   // content light level
   if( m_pcEncCfg->m_contentLightLevel[0] != 0 && m_pcEncCfg->m_contentLightLevel[1] != 0 )
   {

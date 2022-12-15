@@ -382,6 +382,26 @@ void setInputBitDepthAndColorSpace( VVEncAppCfg* appcfg, vvenc_config* cfg, int 
   }
 }
 
+void setDefaultFGCSEI(vvenc_config* c)
+{
+c->m_filmGrainSEIEnabled = false;                    
+c->m_fgcSEIPerPictureSEI = false;              
+c->m_filmGrainCharacteristicsCancelFlag = false;
+c->m_filmGrainCharacteristicsPersistenceFlag = (uint8_t)0;
+c->m_filmGrainModelId = (uint8_t)0;                     
+c->m_separateColourDescriptionPresent =        false;
+c->m_filmGrainBitDepthLumaMinus8 =             (uint8_t)0;
+c->m_filmGrainBitDepthChromaMinus8 =           (uint8_t)0;
+c->m_filmGrainFullRangeFlag =                  false;
+c->m_filmGrainColourPrimaries =                (uint8_t)0;
+c->m_filmGrainTransferCharacteristics =        (uint8_t)0;
+c->m_filmGrainMatrixCoeffs =                   (uint8_t)0;
+c->m_blendingModeId =                          (uint8_t)0;
+c->m_log2ScaleFactor =                         (uint8_t)0;
+c->m_compModelPresentFlagComp0 =               (uint8_t)0;
+c->m_compModelPresentFlagComp1 =               (uint8_t)0;
+c->m_compModelPresentFlagComp2 =               (uint8_t)0;
+}
 // ====================================================================================================================
 // Public member functions
 // ====================================================================================================================
@@ -454,6 +474,32 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
   IStreamToArr<char>                toSummaryOutFilename          ( &c->m_summaryOutFilename[0], VVENC_MAX_STRING_LEN  );
   IStreamToArr<char>                toSummaryPicFilenameBase      ( &c->m_summaryPicFilenameBase[0], VVENC_MAX_STRING_LEN  );
 
+
+#ifdef VVENC_FEATURE_FGS
+  /*c->m_intensityIntervalsLowerBoundsComp0 = new int[256];
+  c->m_intensityIntervalsLowerBoundsComp1 = new int[256];
+  c->m_intensityIntervalsLowerBoundsComp2 = new int[256];
+  c->m_intensityIntervalsUpperBoundsComp0 = new int[256];
+  c->m_intensityIntervalsUpperBoundsComp1 = new int[256];
+  c->m_intensityIntervalsUpperBoundsComp2 = new int[256];
+  c->m_compModelValuesComp0 = new int[128];
+  c->m_compModelValuesComp1 = new int[128];
+  c->m_compModelValuesComp2 = new int[128];*/
+
+  setDefaultFGCSEI(c);
+  
+  IStreamToVec<int>                   toIntensityIntervalsLowerBoundsComp0    (&(c->m_intensityIntervalsLowerBoundsComp0));
+  IStreamToVec<int>                   toIntensityIntervalsLowerBoundsComp1    (&(c->m_intensityIntervalsLowerBoundsComp1));
+  IStreamToVec<int>                   toIntensityIntervalsLowerBoundsComp2    (&(c->m_intensityIntervalsLowerBoundsComp2));
+  IStreamToVec<int>                   toIntensityIntervalsUpperBoundsComp0    (&(c->m_intensityIntervalsUpperBoundsComp0));
+  IStreamToVec<int>                   toIntensityIntervalsUpperBoundsComp1    (&(c->m_intensityIntervalsUpperBoundsComp1));
+  IStreamToVec<int>                   toIntensityIntervalsUpperBoundsComp2    (&(c->m_intensityIntervalsUpperBoundsComp2));
+  IStreamToVec<int>                   toCompModelValuesComp0                  (&(c->m_compModelValuesComp0));
+  IStreamToVec<int>                   toCompModelValuesComp1                  (&(c->m_compModelValuesComp1));
+  IStreamToVec<int>                   toCompModelValuesComp2                  (&(c->m_compModelValuesComp2));
+#endif
+  
+
   po::Options opts;
   if( m_easyMode )
   {
@@ -475,6 +521,7 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
     ("input,i",                                         m_inputFileName,                                     "original YUV input file name or '-' for reading from stdin")
     ("size,s",                                          toSourceSize,                                        "specify input resolution (WidthxHeight)")
     ("format,c",                                        toInputFormatBitdepth,                               "set input format (yuv420, yuv420_10, yuv420_10_packed)")
+    ("cfg",                                               po::parseConfigFile,                                "configuration file name")
     ("framerate,r",                                     c->m_FrameRate,                                      "temporal rate (framerate numerator) e.g. 25,30, 30000, 50,60, 60000 ")
     ("framescale",                                      c->m_FrameScale,                                     "temporal scale (framerate denominator) e.g. 1, 1001 ")
     ("fps",                                             toFps,                                               "Framerate as int or fraction (num/denom) ")
@@ -591,15 +638,88 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
     opts.setSubSection("HDR and Color Options");
     opts.addOptions()
     ("hdr",                                             toHDRMode,                                           "set HDR mode (+SEI messages) + BT.709 or BT.2020 color space. "
-                                                                                                             "use: off, pq|hdr10, pq_2020|hdr10_2020, hlg, hlg_2020")
-    ;
+                                                                                                             "use: off, pq|hdr10, pq_2020|hdr10_2020, hlg, hlg_2020");
+#ifdef VVENC_FEATURE_FGS
+  /* TODO: insert Film Grain SEI Message Characteristics (SEIPerPictureSei) */
+  opts.addOptions()
+    ("SEIFGCEnabled",                                   c->m_filmGrainSEIEnabled,                        "")
+    ("SEIFGCPerPictureSEI",                             c->m_fgcSEIPerPictureSEI,                        "")
+    ("SEIFGCCancelFlag",                                c->m_filmGrainCharacteristicsCancelFlag,         "")  //bool      m_filmGrainCharacteristicsCancelFlag;
+    ("SEIFGCPersistenceFlag",                           c->m_filmGrainCharacteristicsPersistenceFlag,        "")  //uint8_t   m_filmGrainCharacteristicsPersistenceFlag;
+    ("SEIFGCModelID",                                   c->m_filmGrainModelId,                               "")  //uint8_t   m_filmGrainModelId;
+    ("SEIFGCSepColourDescPresentFlag",                  c->m_separateColourDescriptionPresent,           "")  //bool      m_separateColourDescriptionPresent;
+    ("SEIFGCBitDepthLumaMinus8",                        c->m_filmGrainBitDepthLumaMinus8,                    "")  //uint8_t   m_filmGrainBitDepthLumaMinus8;
+    ("SEIFGCBitDepthChromaMinus8",                      c->m_filmGrainBitDepthChromaMinus8,                  "")  //uint8_t   m_filmGrainBitDepthChromaMinus8;
+    ("SEIFGCFullRangeFlag",                             c->m_filmGrainFullRangeFlag,                     "")  //bool      m_filmGrainFullRangeFlag;
+    ("SEIFGCColourPrimaries",                           c->m_filmGrainColourPrimaries,                       "")  //uint8_t   m_filmGrainColourPrimaries;
+    ("SEIFGCTransferCharacteristics",                   c->m_filmGrainTransferCharacteristics,               "")  //uint8_t   m_filmGrainTransferCharacteristics;
+    ("SEIFGCMatrixCoeffs",                              c->m_filmGrainMatrixCoeffs,                          "")  //uint8_t   m_filmGrainMatrixCoeffs;
+    ("SEIFGCBlendingModeID",                            c->m_blendingModeId,                                 "")  //uint8_t   m_blendingModeId;
+    ("SEIFGCLog2ScaleFactor",                           c->m_log2ScaleFactor,                                "")  //uint8_t   m_log2ScaleFactor;
+    ("SEIFGCCompModelPresentComp0",                     c->m_compModelPresentFlagComp0,              "")  
+    ("SEIFGCCompModelPresentComp1",                     c->m_compModelPresentFlagComp1,              "")
+    ("SEIFGCCompModelPresentComp2",                     c->m_compModelPresentFlagComp2,              "");
+
+    opts.addOptions()
+    ("SEIFGCNumIntensityIntervalMinus1Comp0",           c->m_numIntensityIntervalsMinus1Comp0,               "")
+    ("SEIFGCNumIntensityIntervalMinus1Comp1",           c->m_numIntensityIntervalsMinus1Comp1,               "")
+    ("SEIFGCNumIntensityIntervalMinus1Comp2",           c->m_numIntensityIntervalsMinus1Comp2,               "")
+    ("SEIFGCNumModelValuesMinus1Comp0",                 c->m_numModelValuesMinus1Comp0,                      "")
+    ("SEIFGCNumModelValuesMinus1Comp1",                 c->m_numModelValuesMinus1Comp1,                      "")
+    ("SEIFGCNumModelValuesMinus1Comp2",                 c->m_numModelValuesMinus1Comp2,                      "")
+    ("SEIFGCIntensityIntervalLowerBoundComp0",          toIntensityIntervalsLowerBoundsComp0,                "")
+    ("SEIFGCIntensityIntervalLowerBoundComp1",          toIntensityIntervalsLowerBoundsComp1,                "")
+    ("SEIFGCIntensityIntervalLowerBoundComp2",          toIntensityIntervalsLowerBoundsComp2,                "")
+    ("SEIFGCIntensityIntervalUpperBoundComp0",          toIntensityIntervalsUpperBoundsComp0,                "")
+    ("SEIFGCIntensityIntervalUpperBoundComp1",          toIntensityIntervalsUpperBoundsComp1,                "")
+    ("SEIFGCIntensityIntervalUpperBoundComp2",          toIntensityIntervalsUpperBoundsComp2,                "")
+    ("SEIFGCCompModelValuesComp0",                      toCompModelValuesComp0,                              "")
+    ("SEIFGCCompModelValuesComp1",                      toCompModelValuesComp1,                              "")
+    ("SEIFGCCompModelValuesComp2",                      toCompModelValuesComp2,                              "");
+    
+#endif   
+    
   }
   else
   {
     opts.setSubSection("VUI and SEI options");
     opts.addOptions()
-    ("Hdr",                                             toHDRMode,                                           "set HDR mode (+SEI messages) + BT.709 or BT.2020 color space. "
-                                                                                                             "If maxcll or masteringdisplay is set, HDR10/PQ is enabled. use: off, pq|hdr10, pq_2020|hdr10_2020, hlg, hlg_2020")
+    ("Hdr",                                             toHDRMode,                                           "set HDR mode (+SEI messages) + BT.709 or BT.2020 color space. ")
+#ifdef VVENC_FEATURE_FGS
+  /* TODO: insert Film Grain SEI Message Characteristics */
+    ("SEIFGCEnabled",                                   c->m_filmGrainSEIEnabled,                            "")
+    ("SEIFGCPerPictureSEI",                             c->m_fgcSEIPerPictureSEI,                            "")
+    ("SEIFGCCancelFlag",                                c->m_filmGrainCharacteristicsCancelFlag,             "")  //bool      m_filmGrainCharacteristicsCancelFlag;
+    ("SEIFGCPersistenceFlag",                           c->m_filmGrainCharacteristicsPersistenceFlag,        "")  //uint8_t   m_filmGrainCharacteristicsPersistenceFlag;
+    ("SEIFGCModelID",                                   c->m_filmGrainModelId,                               "")  //uint8_t   m_filmGrainModelId;
+    ("SEIFGCSepColourDescPresentFlag",                  c->m_separateColourDescriptionPresent,               "")  //bool      m_separateColourDescriptionPresent;
+    ("SEIFGCBitDepthLumaMinus8",                        c->m_filmGrainBitDepthLumaMinus8,                    "")  //uint8_t   m_filmGrainBitDepthLumaMinus8;
+    ("SEIFGCBitDepthChromaMinus8",                      c->m_filmGrainBitDepthChromaMinus8,                  "")  //uint8_t   m_filmGrainBitDepthChromaMinus8;
+    ("SEIFGCFullRangeFlag",                             c->m_filmGrainFullRangeFlag,                         "")  //bool      m_filmGrainFullRangeFlag;
+    ("SEIFGCColourPrimaries",                           c->m_filmGrainColourPrimaries,                       "")  //uint8_t   m_filmGrainColourPrimaries;
+    ("SEIFGCTransferCharacteristics",                   c->m_filmGrainTransferCharacteristics,               "")  //uint8_t   m_filmGrainTransferCharacteristics;
+    ("SEIFGCMatrixCoeffs",                              c->m_filmGrainMatrixCoeffs,                          "")  //uint8_t   m_filmGrainMatrixCoeffs;
+    ("SEIFGCBlendingModeID",                            c->m_blendingModeId,                                 "")  //uint8_t   m_blendingModeId;
+    ("SEIFGCLog2ScaleFactor",                           c->m_log2ScaleFactor,                                "")  //uint8_t   m_log2ScaleFactor;
+    ("SEIFGCCompModelPresentComp0",                     c->m_compModelPresentFlagComp0,                      "")  
+    ("SEIFGCCompModelPresentComp1",                     c->m_compModelPresentFlagComp1,                      "")
+    ("SEIFGCCompModelPresentComp2",                     c->m_compModelPresentFlagComp2,                      "")
+    ("SEIFGCNumIntensityIntervalMinus1Comp0",           c->m_numIntensityIntervalsMinus1Comp0,               "")
+    ("SEIFGCNumIntensityIntervalMinus1Comp1",           c->m_numIntensityIntervalsMinus1Comp1,               "")
+    ("SEIFGCNumIntensityIntervalMinus1Comp2",           c->m_numIntensityIntervalsMinus1Comp2,               "")
+    ("SEIFGCNumModelValuesMinus1Comp0",                 c->m_numModelValuesMinus1Comp0,                      "")
+    ("SEIFGCNumModelValuesMinus1Comp1",                 c->m_numModelValuesMinus1Comp1,                      "")
+    ("SEIFGCNumModelValuesMinus1Comp2",                 c->m_numModelValuesMinus1Comp2,                      "")
+    ("SEIFGCIntensityIntervalLowerBoundComp0",          toIntensityIntervalsLowerBoundsComp0,                "")
+    ("SEIFGCIntensityIntervalLowerBoundComp1",          toIntensityIntervalsLowerBoundsComp1,                "")
+    ("SEIFGCIntensityIntervalLowerBoundComp2",          toIntensityIntervalsLowerBoundsComp2,                "")
+    ("SEIFGCIntensityIntervalUpperBoundComp0",          toIntensityIntervalsUpperBoundsComp0,                "")
+    ("SEIFGCIntensityIntervalUpperBoundComp1",          toIntensityIntervalsUpperBoundsComp1,                "")
+    ("SEIFGCIntensityIntervalUpperBoundComp2",          toIntensityIntervalsUpperBoundsComp2,                "")
+    ("SEIFGCCompModelValuesComp0",                      toCompModelValuesComp0,                              "")
+    ("SEIFGCCompModelValuesComp1",                      toCompModelValuesComp1,                              "")
+    ("SEIFGCCompModelValuesComp2",                      toCompModelValuesComp2,                              "")
+#endif                                                                                                       
     ;
   }
 
