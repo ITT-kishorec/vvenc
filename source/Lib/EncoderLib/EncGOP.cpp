@@ -2211,7 +2211,7 @@ void EncGOP::xInitSliceMvdL1Zero( PicHeader* picHeader, const Slice* slice )
 #ifdef VVENC_LMCS_SWITCH
 bool EncGOP::xGetPocDecisionLMCS( int poc )
 {
-  if (m_pcEncCfg->m_lmcsErrEncountered)
+  if (m_pcEncCfg->m_lmcsErrEncountered || m_pcEncCfg->m_lmcsInternalDecisions)
     return true;
 
   for( int i = 0; i < m_pcEncCfg->m_lmcsDecisionsSize; i++)

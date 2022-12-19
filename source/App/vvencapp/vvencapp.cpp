@@ -121,6 +121,7 @@ void printVVEncErrorMsg( const std::string cMessage, int code, const std::string
 #define VVENC_LMCS_FILE_SUCCESS             1
 #define VVENC_LMCS_FILE_ERR                -6
 #define VVENC_LMCS_SWITCH_OFF              -7
+#define VVENC_LMCS_ON_NOFILE               -8
 
 int parseLine( vvenc_config::vvencLmcsDecision* dec, std::string line, int lineNumber, int* size )
 {
@@ -200,8 +201,14 @@ int checkIntervals(std::vector<vvenc_config::vvencLmcsDecision> decisionVector)
 int vvencParseLMCSDecisions( apputils::VVEncAppCfg& rcVVEncAppCfg, vvenc_config& vvencCfg )
 {
   int iRet = VVENC_LMCS_SWITCH_OFF;
-  if( vvencCfg.m_lumaReshapeEnable && !rcVVEncAppCfg.m_LMCSDecisionsFile.empty() )
+  if( rcVVEncAppCfg.m_LMCSDecisionsFile.empty() )
   {
+    vvencCfg.m_lmcsInternalDecisions = true;
+    return VVENC_LMCS_ON_NOFILE;
+  }
+  if( vvencCfg.m_lumaReshapeEnable )
+  {
+    
     std::fstream m_LMCSFile = std::fstream( rcVVEncAppCfg.m_LMCSDecisionsFile, std::ios::in );
     int numGops = 0;
     int lineNumber = 0;

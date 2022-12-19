@@ -626,6 +626,7 @@ typedef struct vvenc_config
 
   int                 m_lmcsDecisionsSize;
   bool                m_lmcsErrEncountered;
+  bool                m_lmcsInternalDecisions;
   #endif
   int                 m_reshapeSignalType;
   int                 m_updateCtrl;
