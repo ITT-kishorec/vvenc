@@ -116,7 +116,11 @@ public:
   void destroy();
 
   void calcSeqStats     ( Picture& pic, SeqInfo &stats);
+  #ifdef VVENC_LMCS_SWITCH
+  void preAnalyzerLMCS  ( bool amendDecision, Picture& pic, const uint32_t signalType, const SliceType sliceType, const vvencReshapeCW& reshapeCW);
+  #else
   void preAnalyzerLMCS  ( Picture& pic, const uint32_t signalType, const SliceType sliceType, const vvencReshapeCW& reshapeCW);
+  #endif
   void preAnalyzerHDR   ( Picture& pic, const SliceType sliceType, const vvencReshapeCW& reshapeCW );
   void bubbleSortDsd    ( double *array, int * idx, int n);
   void cwPerturbation   ( int startBinIdx, int endBinIdx, uint16_t maxCW);

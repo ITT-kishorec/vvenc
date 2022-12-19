@@ -45,11 +45,19 @@ POSSIBILITY OF SUCH DAMAGE.
   \brief   This vvencapp.cpp file contains the main entry point of the application.
 */
 
+#define VVENC_LMCS_SWITCH
+
 #include <iostream>
 
 #include <stdio.h>
 #include <string>
 #include <fstream>
+
+#ifdef VVENC_LMCS_SWITCH
+#include <sstream>
+#include <vector>
+#endif
+
 #include <cstring>
 #include <ctime>
 #include <chrono>
@@ -103,7 +111,154 @@ void printVVEncErrorMsg( const std::string cMessage, int code, const std::string
   }
   msgApp( nullptr, VVENC_ERROR, "%s\n", errstr.str().c_str() );
 }
+#ifdef VVENC_LMCS_SWITCH
 
+#define VVENC_LMCS_ERR_NONBINARY_DECISION  -2
+#define VVENC_LMCS_ERR_INVALID_INTERVAL    -3
+#define VVENC_LMCS_ERR_INVALID_ROWSIZE     -4
+#define VVENC_LMCS_ERR_INTERVALS_NONINCREASING -5
+#define VVENC_LMCS_LINE_VALID               1
+#define VVENC_LMCS_FILE_SUCCESS             1
+#define VVENC_LMCS_FILE_ERR                -6
+#define VVENC_LMCS_SWITCH_OFF              -7
+
+int parseLine( vvenc_config::vvencLmcsDecision* dec, std::string line, int lineNumber, int* size )
+{
+  std::istringstream line_ss(line);
+  if(lineNumber == 0)
+  {
+    int sz;
+    line_ss >> sz;
+    (*size) = sz;
+  }
+  else
+  {
+    char delim = ',';
+
+    line_ss >> dec->gop_pocLowerBound >> delim >> dec->gop_pocUpperBound >> delim >> dec->gop_lmcsDecision;
+
+    bool invalidRowsize = (dec->gop_pocLowerBound == -1 || dec->gop_pocUpperBound == -1 || dec->gop_lmcsDecision == -1);
+    bool nonbinaryDecision = (dec->gop_lmcsDecision < 0 || dec->gop_lmcsDecision > 1);
+    bool invalidInterval = (dec->gop_pocLowerBound >= dec->gop_pocUpperBound);
+
+    if ( invalidRowsize )
+      return VVENC_LMCS_ERR_INVALID_ROWSIZE;
+    if ( invalidInterval )
+      return VVENC_LMCS_ERR_INVALID_INTERVAL;
+    if ( nonbinaryDecision )
+      return VVENC_LMCS_ERR_NONBINARY_DECISION;
+  }
+  return VVENC_LMCS_LINE_VALID;
+
+}
+
+typedef struct vvencLmcsError
+{
+  int lineNumber;
+  int errCode;
+}vvencLmcsError;
+
+int parseAndPrintErrors(std::vector<vvencLmcsError> errs)
+{
+  if(errs.size() == 0)
+    return VVENC_LMCS_FILE_SUCCESS;
+  else
+  {
+    std::string errString;
+    for(vvencLmcsError e : errs)
+    {
+      switch(e.errCode)
+      {
+        case VVENC_LMCS_ERR_INVALID_INTERVAL:
+                errString = "POC Interval invalid. The first element MUST be smaller than the second element.";
+                break;
+        case VVENC_LMCS_ERR_NONBINARY_DECISION:
+                errString = "Decision invalid. The third element MUST be a binary choice (0 or 1).";
+                break;
+        case VVENC_LMCS_ERR_INVALID_ROWSIZE:
+                errString = "Row Size invalid. The line MUST have at least 3 elements.";
+                break;
+        case VVENC_LMCS_ERR_INTERVALS_NONINCREASING:
+                errString = "POC interval invalid. The intervals MUST be monotonically increasing.";
+      }
+      msgApp(nullptr, VVENC_ERROR, "Error on line %d: %s\n", e.lineNumber, errString.c_str());
+    }
+    return VVENC_LMCS_FILE_ERR;
+  }
+}
+
+int checkIntervals(std::vector<vvenc_config::vvencLmcsDecision> decisionVector)
+{
+  for(long unsigned int i = 0; i < decisionVector.size() - 1;i++)
+  {
+    if(decisionVector[i].gop_pocUpperBound > decisionVector[i+1].gop_pocLowerBound)
+      return VVENC_LMCS_ERR_INTERVALS_NONINCREASING;
+  }
+  return VVENC_LMCS_LINE_VALID;
+}
+
+int vvencParseLMCSDecisions( apputils::VVEncAppCfg& rcVVEncAppCfg, vvenc_config& vvencCfg )
+{
+  int iRet = VVENC_LMCS_SWITCH_OFF;
+  if( vvencCfg.m_lumaReshapeEnable && !rcVVEncAppCfg.m_LMCSDecisionsFile.empty() )
+  {
+    std::fstream m_LMCSFile = std::fstream( rcVVEncAppCfg.m_LMCSDecisionsFile, std::ios::in );
+    int numGops = 0;
+    int lineNumber = 0;
+    std::string line = "";
+    
+    vvencLmcsError line_err;
+    std::vector<vvencLmcsError> errVector;
+
+    vvenc_config::vvencLmcsDecision decision;
+    std::vector<vvenc_config::vvencLmcsDecision> decisionVector;
+
+    while(!m_LMCSFile.eof())
+    {
+      decision = {-1,-1,-1};
+      std::getline(m_LMCSFile, line);
+      line_err.lineNumber = lineNumber;
+      line_err.errCode = parseLine(&decision,line,lineNumber,&numGops);
+      if(line_err.errCode != VVENC_LMCS_LINE_VALID)
+      {
+        errVector.push_back(line_err);
+      }
+      if(lineNumber != 0)
+      {
+        decisionVector.push_back(decision);
+
+        line_err.errCode = checkIntervals(decisionVector);
+        
+        if(line_err.errCode != VVENC_LMCS_LINE_VALID)
+          errVector.push_back(line_err);
+      }
+      lineNumber++;
+    }
+
+    iRet = parseAndPrintErrors(errVector);
+
+    if(iRet == VVENC_LMCS_FILE_SUCCESS)
+    {
+      vvencCfg.m_lmcsErrEncountered = false;
+      vvencCfg.m_lmcsDecisionsSize = decisionVector.size();
+      vvencCfg.m_lmcsDecisions = new vvenc_config::vvencLmcsDecision[vvencCfg.m_lmcsDecisionsSize];
+      for(long unsigned int i = 0; i < decisionVector.size();i++)
+      {
+        vvencCfg.m_lmcsDecisions[i].gop_pocLowerBound = decisionVector[i].gop_pocLowerBound;
+        vvencCfg.m_lmcsDecisions[i].gop_pocUpperBound = decisionVector[i].gop_pocUpperBound;
+        vvencCfg.m_lmcsDecisions[i].gop_lmcsDecision  = decisionVector[i].gop_lmcsDecision;
+      }
+    }
+    else
+    {
+      vvencCfg.m_lmcsErrEncountered = true;
+    }
+    m_LMCSFile.close();
+  }
+  return iRet;
+}
+
+#endif
 
 bool parseCfg( int argc, char* argv[], apputils::VVEncAppCfg& rcVVEncAppCfg, vvenc_config &vvenccfg )
 {
@@ -220,6 +375,9 @@ int main( int argc, char* argv[] )
     return 1;
   }
 
+#ifdef VVENC_LMCS_SWITCH
+  vvencParseLMCSDecisions(vvencappCfg,vvenccfg);
+#endif
   // show version or help
   if( vvencappCfg.m_showVersion || vvencappCfg.m_showHelp )
   {

@@ -2208,6 +2208,22 @@ void EncGOP::xInitSliceMvdL1Zero( PicHeader* picHeader, const Slice* slice )
   }
 }
 
+#ifdef VVENC_LMCS_SWITCH
+bool EncGOP::xGetPocDecisionLMCS( int poc )
+{
+  if (m_pcEncCfg->m_lmcsErrEncountered)
+    return true;
+
+  for( int i = 0; i < m_pcEncCfg->m_lmcsDecisionsSize; i++)
+  {
+    if(poc >= m_pcEncCfg->m_lmcsDecisions[i].gop_pocLowerBound && poc <= m_pcEncCfg->m_lmcsDecisions[i].gop_pocUpperBound)
+      return (m_pcEncCfg->m_lmcsDecisions[i].gop_lmcsDecision == 1)?true:false;
+  }
+  
+  return true;
+}
+#endif
+
 void EncGOP::xInitLMCS( Picture& pic )
 {
   Slice* slice = pic.cs->slice;
@@ -2232,7 +2248,11 @@ void EncGOP::xInitLMCS( Picture& pic )
   }
   else if ( m_pcEncCfg->m_reshapeSignalType == RESHAPE_SIGNAL_SDR || m_pcEncCfg->m_reshapeSignalType == RESHAPE_SIGNAL_HLG )
   {
+    #ifdef VVENC_LMCS_SWITCH
+    m_Reshaper.preAnalyzerLMCS( xGetPocDecisionLMCS(pic.poc), pic, m_pcEncCfg->m_reshapeSignalType, sliceType, m_pcEncCfg->m_reshapeCW );
+    #else
     m_Reshaper.preAnalyzerLMCS( pic, m_pcEncCfg->m_reshapeSignalType, sliceType, m_pcEncCfg->m_reshapeCW );
+    #endif
   }
   else
   {

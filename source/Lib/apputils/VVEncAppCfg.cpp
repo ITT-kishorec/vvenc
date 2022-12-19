@@ -473,6 +473,9 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
   {
     opts.addOptions()
     ("input,i",                                         m_inputFileName,                                     "original YUV input file name or '-' for reading from stdin")
+    #ifdef VVENC_LMCS_SWITCH
+    ("LMCSFile",                                        m_LMCSDecisionsFile,                                 "specify Decisions for LMCS tool for each GOP (If LMCS switched on)")
+    #endif
     ("size,s",                                          toSourceSize,                                        "specify input resolution (WidthxHeight)")
     ("format,c",                                        toInputFormatBitdepth,                               "set input format (yuv420, yuv420_10, yuv420_10_packed)")
     ("framerate,r",                                     c->m_FrameRate,                                      "temporal rate (framerate numerator) e.g. 25,30, 30000, 50,60, 60000 ")
@@ -544,7 +547,7 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
     ("tiles",                                           toNumTiles,                                          "Set number of tile columns and rows")
     ("LMCSEnable",                                      c->m_lumaReshapeEnable,                              "Enable LMCS luma mapping with chroma scaling (0:off 1:on 2:use SCC detection to disable for screen coded content)")
     ("LookAhead",                                       c->m_LookAhead,                                      "Enable pre-analysis pass with picture look-ahead (-1,0,1)")
-	("LMCSSignalType",                                  c->m_reshapeSignalType,                              "Input signal type (0:SDR, 1:HDR-PQ, 2:HDR-HLG)")
+	  ("LMCSSignalType",                                  c->m_reshapeSignalType,                              "Input signal type (0:SDR, 1:HDR-PQ, 2:HDR-HLG)")
 		;
   }
   else

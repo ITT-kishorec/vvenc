@@ -70,6 +70,9 @@ public:
   std::string  m_bitstreamFileName;                            ///< output bitstream file
   std::string  m_reconFileName;                                ///< output reconstruction file
   std::string  m_RCStatsFileName;                              ///< rate control statistics file
+  #ifdef VVENC_LMCS_SWITCH
+  std::string  m_LMCSDecisionsFile;
+  #endif
   vvencChromaFormat m_inputFileChromaFormat    = VVENC_CHROMA_420;
   int          m_FrameSkip                    = 0;             ///< number of skipped frames from the beginning
   bool         m_bClipInputVideoToRec709Range  = false;

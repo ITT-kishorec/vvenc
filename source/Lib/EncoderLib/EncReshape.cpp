@@ -444,11 +444,18 @@ void EncReshape::calcSeqStats(Picture& pic, SeqInfo &stats)
     }
   }
 }
-
+#ifdef VVENC_LMCS_SWITCH
+void EncReshape::preAnalyzerLMCS(bool amendDecision, Picture& pic, const uint32_t signalType, const SliceType sliceType, const vvencReshapeCW& reshapeCW)
+#else
 void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const SliceType sliceType, const vvencReshapeCW& reshapeCW)
+#endif
 {
   m_sliceReshapeInfo.sliceReshaperModelPresent = true;
+  #ifdef VVENC_LMCS_SWITCH
+  m_sliceReshapeInfo.sliceReshaperEnabled = true && amendDecision;
+  #else
   m_sliceReshapeInfo.sliceReshaperEnabled = true;
+  #endif
   int modIP = pic.getPOC() - pic.getPOC() / reshapeCW.rspFpsToIp * reshapeCW.rspFpsToIp;
 #if LMCS_ENABLE_CONTROL
   double picTemporalAct = pic.picTemporalActY;
@@ -557,7 +564,12 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       }
 
       if (m_rateAdpMode == 2 && reshapeCW.rspBaseQP <= 22) { intraAdp = false; interAdp = false; }
+      #ifdef VVENC_LMCS_SWITCH
+      m_sliceReshapeInfo.sliceReshaperEnabled = intraAdp && amendDecision;
+      #else
       m_sliceReshapeInfo.sliceReshaperEnabled = intraAdp;
+      #endif
+      
       if (!intraAdp && !interAdp)
       {
         m_sliceReshapeInfo.sliceReshaperModelPresent = false;
@@ -612,7 +624,11 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
       if (gopAvgTemporalToAvgSpatialRatio < LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL_THRESHOLD && (m_reshape == true) && (m_sliceReshapeInfo.sliceReshaperEnabled == false))
       {
         m_isMetricE2Case = true;
+        #ifdef VVENC_LMCS_SWITCH
+        m_sliceReshapeInfo.sliceReshaperEnabled = true && amendDecision;
+        #else
         m_sliceReshapeInfo.sliceReshaperEnabled = true;
+        #endif
       }
       else
       {
@@ -631,7 +647,11 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
     {
       const int cTid = m_reshapeCW.rspTid;
       bool enableRsp = m_tcase == 5 ? false : (m_tcase < 5 ? (cTid < m_tcase + 1 ? false : true) : (cTid <= 10 - m_tcase ? true : false));
+      #ifdef VVENC_LMCS_SWITCH
+      m_sliceReshapeInfo.sliceReshaperEnabled = enableRsp && amendDecision;
+      #else
       m_sliceReshapeInfo.sliceReshaperEnabled = enableRsp;
+      #endif
 
       if( m_sliceReshapeInfo.sliceReshaperEnabled )
       {
@@ -732,7 +752,11 @@ void EncReshape::preAnalyzerLMCS(Picture& pic, const uint32_t signalType, const 
 #if LMCS_TEMPORAL_SPATIAL_ACTIVITY_RATIO_LOW_CONTROL
         if (m_isMetricE2Case)
         {
+          #ifdef VVENC_LMCS_SWITCH
+          m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0) && amendDecision;
+          #else
           m_sliceReshapeInfo.sliceReshaperEnabled = (pic.cs->slice->TLayer == 0);
+          #endif
         }
 #endif
 

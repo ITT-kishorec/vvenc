@@ -615,6 +615,18 @@ typedef struct vvenc_config
   bool                m_DMVR;
   int                 m_EDO;
   int                 m_lumaReshapeEnable;
+  #ifdef VVENC_LMCS_SWITCH
+
+  struct vvencLmcsDecision
+  {
+    int gop_pocLowerBound;
+    int gop_pocUpperBound;
+    int gop_lmcsDecision;
+  }* m_lmcsDecisions;
+
+  int                 m_lmcsDecisionsSize;
+  bool                m_lmcsErrEncountered;
+  #endif
   int                 m_reshapeSignalType;
   int                 m_updateCtrl;
   int                 m_adpOption;

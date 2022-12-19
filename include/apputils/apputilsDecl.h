@@ -58,6 +58,8 @@ POSSIBILITY OF SUCH DAMAGE.
 # endif // APPUTILS_DYN_LINK
 #endif // _WIN32
 
+#define VVENC_LMCS_SWITCH
+
 #if !defined( APPUTILS_DECL )
 # define APPUTILS_DECL
 #endif

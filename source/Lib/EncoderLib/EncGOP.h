@@ -232,6 +232,9 @@ private:
   void xInitSliceTMVPFlag             ( PicHeader* picHeader, const Slice* slice, int gopId );
   void xUpdateRPRtmvp                 ( PicHeader* picHeader, Slice* slice );
   void xInitSliceMvdL1Zero            ( PicHeader* picHeader, const Slice* slice );
+  #ifdef VVENC_LMCS_SWITCH
+  bool xGetPocDecisionLMCS( int poc );
+  #endif
   void xInitLMCS                      ( Picture& pic );
   void xSelectReferencePictureList    ( Slice* slice, int curPoc, int gopId, int ltPoc );
   void xSyncAlfAps                    ( Picture& pic, ParameterSetMap<APS>& dst, const ParameterSetMap<APS>& src );
