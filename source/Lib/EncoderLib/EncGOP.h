@@ -232,7 +232,7 @@ private:
   void xInitSliceTMVPFlag             ( PicHeader* picHeader, const Slice* slice, int gopId );
   void xUpdateRPRtmvp                 ( PicHeader* picHeader, Slice* slice );
   void xInitSliceMvdL1Zero            ( PicHeader* picHeader, const Slice* slice );
-  #ifdef VVENC_LMCS_SWITCH
+  #ifdef VVENC_LMCS_2PASS
   bool xGetPocDecisionLMCS( int poc );
   #endif
   void xInitLMCS                      ( Picture& pic );

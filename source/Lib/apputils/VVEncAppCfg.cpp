@@ -473,7 +473,7 @@ int VVEncAppCfg::parse( int argc, char* argv[], vvenc_config* c, std::ostream& r
   {
     opts.addOptions()
     ("input,i",                                         m_inputFileName,                                     "original YUV input file name or '-' for reading from stdin")
-    #ifdef VVENC_LMCS_SWITCH
+    #ifdef VVENC_LMCS_2PASS
     ("LMCSFile",                                        m_LMCSDecisionsFile,                                 "specify Decisions for LMCS tool for each GOP (If LMCS switched on)")
     #endif
     ("size,s",                                          toSourceSize,                                        "specify input resolution (WidthxHeight)")

@@ -615,7 +615,7 @@ typedef struct vvenc_config
   bool                m_DMVR;
   int                 m_EDO;
   int                 m_lumaReshapeEnable;
-  #ifdef VVENC_LMCS_SWITCH
+  #ifdef VVENC_LMCS_2PASS
 
   struct vvencLmcsDecision
   {

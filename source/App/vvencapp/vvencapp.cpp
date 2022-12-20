@@ -45,7 +45,7 @@ POSSIBILITY OF SUCH DAMAGE.
   \brief   This vvencapp.cpp file contains the main entry point of the application.
 */
 
-#define VVENC_LMCS_SWITCH
+#define VVENC_LMCS_2PASS
 
 #include <iostream>
 
@@ -53,7 +53,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <fstream>
 
-#ifdef VVENC_LMCS_SWITCH
+#ifdef VVENC_LMCS_2PASS
 #include <sstream>
 #include <vector>
 #endif
@@ -111,7 +111,7 @@ void printVVEncErrorMsg( const std::string cMessage, int code, const std::string
   }
   msgApp( nullptr, VVENC_ERROR, "%s\n", errstr.str().c_str() );
 }
-#ifdef VVENC_LMCS_SWITCH
+#ifdef VVENC_LMCS_2PASS
 
 #define VVENC_LMCS_ERR_NONBINARY_DECISION  -2
 #define VVENC_LMCS_ERR_INVALID_INTERVAL    -3
@@ -382,7 +382,7 @@ int main( int argc, char* argv[] )
     return 1;
   }
 
-#ifdef VVENC_LMCS_SWITCH
+#ifdef VVENC_LMCS_2PASS
   vvencParseLMCSDecisions(vvencappCfg,vvenccfg);
 #endif
   // show version or help

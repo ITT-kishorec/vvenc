@@ -116,7 +116,7 @@ public:
   void destroy();
 
   void calcSeqStats     ( Picture& pic, SeqInfo &stats);
-  #ifdef VVENC_LMCS_SWITCH
+  #ifdef VVENC_LMCS_2PASS
   void preAnalyzerLMCS  ( bool amendDecision, Picture& pic, const uint32_t signalType, const SliceType sliceType, const vvencReshapeCW& reshapeCW);
   #else
   void preAnalyzerLMCS  ( Picture& pic, const uint32_t signalType, const SliceType sliceType, const vvencReshapeCW& reshapeCW);

@@ -58,7 +58,7 @@ POSSIBILITY OF SUCH DAMAGE.
 # endif // VVENC_DYN_LINK
 #endif // _WIN32
 
-#define VVENC_LMCS_SWITCH
+#define VVENC_LMCS_2PASS
 
 #if !defined( VVENC_DECL )
 # define VVENC_DECL
